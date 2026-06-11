@@ -1,16 +1,17 @@
 """
 AI integration with local disk cache.
-Supports Anthropic Claude via the /v1/messages endpoint.
+Uses Groq API (free tier) with llama-3.3-70b-versatile model.
+Get your free API key at: https://console.groq.com
 """
 import os
 import json
-import hashlib
-import asyncio
 from pathlib import Path
 
 import httpx
 
 CACHE_FILE = Path(__file__).parent / ".ai_cache.json"
+GROQ_API_URL = "https://api.groq.com/openai/v1/chat/completions"
+GROQ_MODEL = "llama-3.3-70b-versatile"
 
 
 class AIService:
@@ -18,6 +19,7 @@ class AIService:
         self._cache: dict = self._load_cache()
 
     # ------------------------------------------------------------------ cache
+
     def _load_cache(self) -> dict:
         if CACHE_FILE.exists():
             try:
@@ -39,17 +41,19 @@ class AIService:
         self._save_cache()
 
     # --------------------------------------------------------------- AI call
+
     async def explain_code(self, code: str, filename: str) -> str:
         """
-        Calls the Anthropic Claude API to explain a code file.
-        Falls back to a static message if no API key is configured.
+        Calls the Groq API (free) to explain a code file in 3 sentences.
+        Falls back to a helpful message if no API key is set.
         """
-        api_key = os.getenv("ANTHROPIC_API_KEY", "")
+        api_key = os.getenv("GROQ_API_KEY", "")
 
         if not api_key:
             return (
-                "No AI API key configured. "
-                "Set the ANTHROPIC_API_KEY environment variable to enable AI explanations."
+                "No Groq API key configured. "
+                "Get a free key at https://console.groq.com and set "
+                "GROQ_API_KEY in your .env file."
             )
 
         # Truncate very large files to stay within token limits
@@ -63,28 +67,37 @@ class AIService:
         )
 
         headers = {
-            "x-api-key":         api_key,
-            "anthropic-version": "2023-06-01",
-            "content-type":      "application/json",
+            "Authorization": f"Bearer {api_key}",
+            "Content-Type":  "application/json",
         }
 
         payload = {
-            "model":      "claude-sonnet-4-20250514",
+            "model":      GROQ_MODEL,
             "max_tokens": 300,
-            "messages":   [{"role": "user", "content": prompt}],
+            "temperature": 0.3,
+            "messages": [
+                {
+                    "role":    "system",
+                    "content": "You are a concise code explainer. Always respond in exactly 3 sentences."
+                },
+                {
+                    "role":    "user",
+                    "content": prompt
+                }
+            ],
         }
 
         try:
             async with httpx.AsyncClient(timeout=30) as client:
                 response = await client.post(
-                    "https://api.anthropic.com/v1/messages",
+                    GROQ_API_URL,
                     headers=headers,
                     json=payload,
                 )
                 response.raise_for_status()
                 data = response.json()
-                return data["content"][0]["text"].strip()
+                return data["choices"][0]["message"]["content"].strip()
         except httpx.HTTPStatusError as e:
-            return f"AI API error ({e.response.status_code}): {e.response.text}"
+            return f"Groq API error ({e.response.status_code}): {e.response.text}"
         except Exception as e:
-            return f"Could not reach AI service: {str(e)}"
+            return f"Could not reach Groq API: {str(e)}"

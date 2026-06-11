@@ -1,0 +1,93 @@
+.topbar {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 10px 20px;
+  background: #161b22;
+  border-bottom: 1px solid #21262d;
+  height: 56px;
+  flex-shrink: 0;
+  z-index: 50;
+}
+
+.topbar-brand {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.brand-icon {
+  font-size: 22px;
+  color: #58a6ff;
+}
+
+.brand-name {
+  font-size: 16px;
+  font-weight: 700;
+  color: #e6edf3;
+  letter-spacing: 0.5px;
+}
+
+.topbar-input-group {
+  display: flex;
+  flex: 1;
+  max-width: 640px;
+  gap: 8px;
+}
+
+.topbar-input {
+  flex: 1;
+  background: #0d1117;
+  border: 1px solid #30363d;
+  border-radius: 8px;
+  padding: 8px 14px;
+  color: #e6edf3;
+  font-size: 13px;
+  outline: none;
+  transition: border-color 0.2s;
+}
+
+.topbar-input:focus {
+  border-color: #58a6ff;
+}
+
+.topbar-input::placeholder {
+  color: #484f58;
+}
+
+.topbar-btn {
+  background: #1f6feb;
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  padding: 8px 20px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s;
+  white-space: nowrap;
+}
+
+.topbar-btn:hover:not(:disabled) {
+  background: #388bfd;
+}
+
+.topbar-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.topbar-stats {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: #8b949e;
+  flex-shrink: 0;
+  margin-left: auto;
+}
+
+.stat-divider {
+  color: #30363d;
+}
