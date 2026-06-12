@@ -6,6 +6,8 @@ export default function TopBar({ repoPath, setRepoPath, onAnalyze, loading, stat
     if (e.key === 'Enter') onAnalyze(repoPath);
   };
 
+  const isUrl = repoPath.startsWith('https://github.com') || repoPath.startsWith('git@github.com');
+
   return (
     <div className="topbar">
       <div className="topbar-brand">
@@ -14,21 +16,31 @@ export default function TopBar({ repoPath, setRepoPath, onAnalyze, loading, stat
       </div>
 
       <div className="topbar-input-group">
-        <input
-          className="topbar-input"
-          type="text"
-          placeholder="Paste absolute repo path, e.g. /home/user/my-project"
-          value={repoPath}
-          onChange={e => setRepoPath(e.target.value)}
-          onKeyDown={handleKey}
-          disabled={loading}
-        />
+        <div className="topbar-input-wrapper">
+          <input
+            className="topbar-input"
+            type="text"
+            placeholder="Local path or GitHub URL — e.g. C:\projects\myapp or https://github.com/user/repo"
+            value={repoPath}
+            onChange={e => setRepoPath(e.target.value)}
+            onKeyDown={handleKey}
+            disabled={loading}
+          />
+          {isUrl && (
+            <span className="topbar-input-badge">GitHub</span>
+          )}
+        </div>
         <button
           className="topbar-btn"
           onClick={() => onAnalyze(repoPath)}
           disabled={loading || !repoPath.trim()}
         >
-          {loading ? 'Scanning...' : 'Analyze'}
+          {loading ? (
+            <>
+              <span className="btn-spinner" />
+              {isUrl ? 'Cloning...' : 'Scanning...'}
+            </>
+          ) : 'Analyze'}
         </button>
       </div>
 
