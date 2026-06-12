@@ -7,6 +7,10 @@ from fastapi.responses import JSONResponse
 from pydantic import BaseModel
 from typing import Optional
 import os
+import hashlib
+import subprocess
+import tempfile
+import shutil
 
 from analyzer import RepositoryAnalyzer
 from ai_service import AIService
@@ -39,6 +43,35 @@ class AIExplainRequest(BaseModel):
     repo_path: str
 
 
+def is_github_url(path: str) -> bool:
+    return path.startswith("https://github.com") or path.startswith("git@github.com")
+
+
+def clone_repo(url: str) -> str:
+    """Clones a GitHub repo to a temp directory and returns the path."""
+    tmp_dir = tempfile.mkdtemp(prefix="repoviz_")
+    try:
+        subprocess.run(
+            ["git", "clone", "--depth=1", url, tmp_dir],
+            check=True,
+            capture_output=True,
+            timeout=120
+        )
+        return tmp_dir
+    except subprocess.CalledProcessError as e:
+        shutil.rmtree(tmp_dir, ignore_errors=True)
+        raise HTTPException(
+            status_code=400,
+            detail=f"Failed to clone repo: {e.stderr.decode()}"
+        )
+    except subprocess.TimeoutExpired:
+        shutil.rmtree(tmp_dir, ignore_errors=True)
+        raise HTTPException(
+            status_code=408,
+            detail="Clone timed out. Repository may be too large."
+        )
+
+
 @app.get("/")
 def root():
     return {"status": "ok", "message": "Repo Analyzer API is running"}
@@ -47,27 +80,41 @@ def root():
 @app.post("/api/analyze")
 def analyze_repository(request: AnalyzeRequest):
     """
-    Traverses a local directory and returns nodes and edges as JSON.
+    Accepts a local path OR a GitHub URL.
+    Traverses the directory and returns nodes and edges as JSON.
     """
-    path = os.path.expanduser(request.path)
-
-    if not os.path.exists(path):
-        raise HTTPException(status_code=404, detail=f"Path not found: {path}")
-    if not os.path.isdir(path):
-        raise HTTPException(status_code=400, detail=f"Path is not a directory: {path}")
-
-    exclude = request.exclude_dirs or [
-        ".git", "__pycache__", "node_modules", ".venv", "venv",
-        "env", "dist", "build", ".next", ".cache", "coverage",
-        ".mypy_cache", ".pytest_cache"
-    ]
+    tmp_dir = None
 
     try:
+        if is_github_url(request.path):
+            tmp_dir = clone_repo(request.path)
+            path = tmp_dir
+        else:
+            path = os.path.expanduser(request.path)
+
+        if not os.path.exists(path):
+            raise HTTPException(status_code=404, detail=f"Path not found: {path}")
+        if not os.path.isdir(path):
+            raise HTTPException(status_code=400, detail=f"Path is not a directory: {path}")
+
+        exclude = request.exclude_dirs or [
+            ".git", "__pycache__", "node_modules", ".venv", "venv",
+            "env", "dist", "build", ".next", ".cache", "coverage",
+            ".mypy_cache", ".pytest_cache"
+        ]
+
         analyzer = RepositoryAnalyzer(path, max_depth=request.max_depth, exclude_dirs=exclude)
         graph = analyzer.analyze()
         return JSONResponse(content=graph)
+
+    except HTTPException:
+        raise
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
+    finally:
+        if tmp_dir:
+            shutil.rmtree(tmp_dir, ignore_errors=True)
 
 
 @app.post("/api/explain")
@@ -78,7 +125,7 @@ async def explain_file(request: AIExplainRequest):
     """
     file_path = os.path.join(
         os.path.expanduser(request.repo_path),
-        request.file_path.lstrip("/")
+        request.file_path.lstrip("/").lstrip("\\")
     )
 
     if not os.path.exists(file_path):
@@ -90,7 +137,6 @@ async def explain_file(request: AIExplainRequest):
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Could not read file: {e}")
 
-    import hashlib
     file_hash = hashlib.md5(content.encode()).hexdigest()
     cached = ai_service.get_cached(file_hash)
     if cached:
@@ -105,7 +151,10 @@ async def explain_file(request: AIExplainRequest):
 @app.get("/api/file-content")
 def get_file_content(repo_path: str = Query(...), file_path: str = Query(...)):
     """Returns raw file content for preview."""
-    full_path = os.path.join(os.path.expanduser(repo_path), file_path.lstrip("/"))
+    full_path = os.path.join(
+        os.path.expanduser(repo_path),
+        file_path.lstrip("/").lstrip("\\")
+    )
     if not os.path.exists(full_path):
         raise HTTPException(status_code=404, detail="File not found")
     try:
