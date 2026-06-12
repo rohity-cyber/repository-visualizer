@@ -3,11 +3,16 @@ import { Handle, Position } from 'reactflow';
 import './FileNode.css';
 
 function FileNode({ data, selected }) {
-  const { label, language, color, loc, complexity, complexityColor, nodeSize } = data;
+  const { label, language, color, loc, complexity, complexityColor, nodeSize, highlighted, dimmed } = data;
 
   return (
     <div
-      className={`file-node ${selected ? 'file-node--selected' : ''}`}
+      className={`
+        file-node
+        ${selected ? 'file-node--selected' : ''}
+        ${highlighted ? 'file-node--highlighted' : ''}
+        ${dimmed ? 'file-node--dimmed' : ''}
+      `}
       style={{
         '--node-color': color,
         '--complexity-color': complexityColor,

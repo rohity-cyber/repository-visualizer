@@ -8,14 +8,15 @@ import { buildGraphElements } from './utils/buildGraph';
 import './App.css';
 
 export default function App() {
-  const [repoPath, setRepoPath]     = useState('');
-  const [nodes, setNodes]           = useState([]);
-  const [edges, setEdges]           = useState([]);
-  const [loading, setLoading]       = useState(false);
-  const [error, setError]           = useState('');
+  const [repoPath, setRepoPath]         = useState('');
+  const [nodes, setNodes]               = useState([]);
+  const [edges, setEdges]               = useState([]);
+  const [loading, setLoading]           = useState(false);
+  const [error, setError]               = useState('');
   const [selectedNode, setSelectedNode] = useState(null);
-  const [stats, setStats]           = useState(null);
-  const [repoRoot, setRepoRoot]     = useState('');
+  const [stats, setStats]               = useState(null);
+  const [repoRoot, setRepoRoot]         = useState('');
+  const [searchQuery, setSearchQuery]   = useState('');
 
   const handleAnalyze = useCallback(async (path) => {
     if (!path.trim()) return;
@@ -24,6 +25,7 @@ export default function App() {
     setSelectedNode(null);
     setNodes([]);
     setEdges([]);
+    setSearchQuery('');
 
     try {
       const data = await analyzeRepo(path);
@@ -39,6 +41,20 @@ export default function App() {
     }
   }, []);
 
+  // Apply search highlight to nodes
+  const displayNodes = nodes.map(node => ({
+    ...node,
+    data: {
+      ...node.data,
+      highlighted: searchQuery
+        ? node.data.label.toLowerCase().includes(searchQuery.toLowerCase())
+        : null,
+      dimmed: searchQuery
+        ? !node.data.label.toLowerCase().includes(searchQuery.toLowerCase())
+        : false,
+    }
+  }));
+
   return (
     <div className="app-shell">
       <TopBar
@@ -47,6 +63,8 @@ export default function App() {
         onAnalyze={handleAnalyze}
         loading={loading}
         stats={stats}
+        searchQuery={searchQuery}
+        setSearchQuery={setSearchQuery}
       />
       <div className="app-body">
         <Sidebar stats={stats} selectedNode={selectedNode} />
@@ -56,8 +74,8 @@ export default function App() {
             <div className="empty-state">
               <div className="empty-icon">⬡</div>
               <h2>No repository loaded</h2>
-              <p>Enter an absolute path above and click Analyze</p>
-              <code>Example: /home/user/my-project</code>
+              <p>Enter a local path or GitHub URL above and click Analyze</p>
+              <code>Example: https://github.com/pallets/flask</code>
             </div>
           )}
           {loading && (
@@ -68,7 +86,7 @@ export default function App() {
           )}
           {nodes.length > 0 && (
             <GraphCanvas
-              nodes={nodes}
+              nodes={displayNodes}
               edges={edges}
               setNodes={setNodes}
               setEdges={setEdges}

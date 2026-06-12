@@ -1,7 +1,7 @@
 import React from 'react';
 import './TopBar.css';
 
-export default function TopBar({ repoPath, setRepoPath, onAnalyze, loading, stats }) {
+export default function TopBar({ repoPath, setRepoPath, onAnalyze, loading, stats, searchQuery, setSearchQuery }) {
   const handleKey = (e) => {
     if (e.key === 'Enter') onAnalyze(repoPath);
   };
@@ -26,9 +26,7 @@ export default function TopBar({ repoPath, setRepoPath, onAnalyze, loading, stat
             onKeyDown={handleKey}
             disabled={loading}
           />
-          {isUrl && (
-            <span className="topbar-input-badge">GitHub</span>
-          )}
+          {isUrl && <span className="topbar-input-badge">GitHub</span>}
         </div>
         <button
           className="topbar-btn"
@@ -36,13 +34,22 @@ export default function TopBar({ repoPath, setRepoPath, onAnalyze, loading, stat
           disabled={loading || !repoPath.trim()}
         >
           {loading ? (
-            <>
-              <span className="btn-spinner" />
-              {isUrl ? 'Cloning...' : 'Scanning...'}
-            </>
+            <><span className="btn-spinner" />{isUrl ? 'Cloning...' : 'Scanning...'}</>
           ) : 'Analyze'}
         </button>
       </div>
+
+      {stats && (
+        <div className="topbar-search-group">
+          <input
+            className="topbar-search"
+            type="text"
+            placeholder="🔍 Search files..."
+            value={searchQuery}
+            onChange={e => setSearchQuery(e.target.value)}
+          />
+        </div>
+      )}
 
       {stats && (
         <div className="topbar-stats">

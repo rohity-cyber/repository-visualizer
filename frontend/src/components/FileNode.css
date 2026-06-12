@@ -135,3 +135,17 @@
   background: #30363d !important;
   border: 1px solid #484f58 !important;
 }
+.file-node--highlighted .file-node__ring {
+  border-color: #f0e040 !important;
+  box-shadow: 0 0 0 3px #f0e04088, 0 0 20px #f0e04066;
+}
+
+.file-node--highlighted .file-node__label {
+  color: #f0e040;
+  font-weight: 700;
+}
+
+.file-node--dimmed {
+  opacity: 0.15;
+  pointer-events: none;
+}
