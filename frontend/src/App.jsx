@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useRef } from 'react';
 import GraphCanvas from './components/GraphCanvas';
 import Sidebar from './components/Sidebar';
 import TopBar from './components/TopBar';
@@ -17,6 +17,7 @@ export default function App() {
   const [stats, setStats]               = useState(null);
   const [repoRoot, setRepoRoot]         = useState('');
   const [searchQuery, setSearchQuery]   = useState('');
+  const zoomToNodeRef                   = useRef(null);
 
   const handleAnalyze = useCallback(async (path) => {
     if (!path.trim()) return;
@@ -41,7 +42,13 @@ export default function App() {
     }
   }, []);
 
-  // Apply search highlight to nodes
+  const handleZoomToNode = useCallback((node) => {
+    setSelectedNode(node);
+    if (zoomToNodeRef.current) {
+      zoomToNodeRef.current(node);
+    }
+  }, []);
+
   const displayNodes = nodes.map(node => ({
     ...node,
     data: {
@@ -67,7 +74,12 @@ export default function App() {
         setSearchQuery={setSearchQuery}
       />
       <div className="app-body">
-        <Sidebar stats={stats} selectedNode={selectedNode} />
+        <Sidebar
+          stats={stats}
+          selectedNode={selectedNode}
+          nodes={nodes}
+          onZoomToNode={handleZoomToNode}
+        />
         <div className="canvas-wrapper">
           {error && <div className="error-banner">{error}</div>}
           {!loading && nodes.length === 0 && !error && (
@@ -92,6 +104,7 @@ export default function App() {
               setEdges={setEdges}
               onNodeClick={setSelectedNode}
               repoRoot={repoRoot}
+              zoomToNodeRef={zoomToNodeRef}
             />
           )}
         </div>

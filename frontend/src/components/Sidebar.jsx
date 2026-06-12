@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import './Sidebar.css';
 
 const LANG_BADGE_COLORS = {
@@ -14,7 +14,15 @@ const LANG_BADGE_COLORS = {
   css:        '#563d7c',
 };
 
-export default function Sidebar({ stats, selectedNode }) {
+export default function Sidebar({ stats, selectedNode, nodes, onZoomToNode }) {
+  const [fileSearch, setFileSearch] = useState('');
+
+  const fileNodes = (nodes || []).filter(n => n.data?.language !== undefined);
+
+  const filtered = fileNodes.filter(n =>
+    n.data.label.toLowerCase().includes(fileSearch.toLowerCase())
+  );
+
   return (
     <div className="sidebar">
       <div className="sidebar-section">
@@ -82,8 +90,46 @@ export default function Sidebar({ stats, selectedNode }) {
         </div>
       )}
 
+      {fileNodes.length > 0 && (
+        <div className="sidebar-section sidebar-section--files">
+          <div className="sidebar-title">Files ({fileNodes.length})</div>
+          <input
+            className="sidebar-file-search"
+            type="text"
+            placeholder="Filter files..."
+            value={fileSearch}
+            onChange={e => setFileSearch(e.target.value)}
+          />
+          <div className="sidebar-file-list">
+            {filtered.map(node => (
+              <div
+                key={node.id}
+                className={`sidebar-file-item ${selectedNode?.id === node.id ? 'sidebar-file-item--active' : ''}`}
+                onClick={() => onZoomToNode(node)}
+                title={node.data.path}
+              >
+                <span
+                  className="sidebar-file-dot"
+                  style={{ background: node.data.color }}
+                />
+                <span className="sidebar-file-name">{node.data.label}</span>
+                <span
+                  className="sidebar-file-complexity"
+                  style={{ color: node.data.complexityColor }}
+                >
+                  {node.data.complexity}
+                </span>
+              </div>
+            ))}
+            {filtered.length === 0 && (
+              <div className="sidebar-file-empty">No files match</div>
+            )}
+          </div>
+        </div>
+      )}
+
       <div className="sidebar-hint">
-        Click any node to view details and AI explanation
+        Click any node or file to view details and AI explanation
       </div>
     </div>
   );
