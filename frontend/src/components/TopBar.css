@@ -34,6 +34,7 @@
   flex: 1;
   max-width: 600px;
   gap: 8px;
+  position: relative;
 }
 
 .topbar-input-wrapper {
@@ -76,6 +77,101 @@
   pointer-events: none;
 }
 
+/* Dropdown */
+.topbar-dropdown {
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 0;
+  right: 0;
+  background: #161b22;
+  border: 1px solid #30363d;
+  border-radius: 10px;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.5);
+  z-index: 200;
+  overflow: hidden;
+}
+
+.topbar-dropdown-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 12px;
+  border-bottom: 1px solid #21262d;
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: #484f58;
+}
+
+.dropdown-clear-btn {
+  background: none;
+  border: none;
+  color: #484f58;
+  font-size: 10px;
+  cursor: pointer;
+  padding: 2px 6px;
+  border-radius: 4px;
+  transition: color 0.2s;
+}
+
+.dropdown-clear-btn:hover {
+  color: #f85149;
+}
+
+.topbar-dropdown-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 9px 12px;
+  cursor: pointer;
+  transition: background 0.15s;
+  border-bottom: 1px solid #21262d;
+}
+
+.topbar-dropdown-item:last-child {
+  border-bottom: none;
+}
+
+.topbar-dropdown-item:hover {
+  background: #21262d;
+}
+
+.dropdown-item-icon {
+  font-size: 13px;
+  flex-shrink: 0;
+}
+
+.dropdown-item-path {
+  flex: 1;
+  font-size: 12px;
+  color: #8b949e;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.topbar-dropdown-item:hover .dropdown-item-path {
+  color: #e6edf3;
+}
+
+.dropdown-item-remove {
+  background: none;
+  border: none;
+  color: #30363d;
+  font-size: 11px;
+  cursor: pointer;
+  padding: 2px 5px;
+  border-radius: 4px;
+  flex-shrink: 0;
+  transition: color 0.2s;
+}
+
+.dropdown-item-remove:hover {
+  color: #f85149;
+}
+
+/* Analyze button */
 .topbar-btn {
   display: flex;
   align-items: center;
@@ -115,6 +211,7 @@
   to { transform: rotate(360deg); }
 }
 
+/* Search */
 .topbar-search-group {
   display: flex;
   align-items: center;
@@ -141,6 +238,7 @@
   color: #484f58;
 }
 
+/* Stats */
 .topbar-stats {
   display: flex;
   align-items: center;
