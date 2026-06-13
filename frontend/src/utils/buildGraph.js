@@ -22,83 +22,76 @@ const LANG_COLORS = {
   scss:       '#c6538c',
   shell:      '#89e051',
   unknown:    '#484f58',
-  directory:  '#21262d',
+  directory:  '#30363d',
 };
 
+const FOLDER_COLORS = [
+  '#58a6ff',
+  '#3fb950',
+  '#d29922',
+  '#f85149',
+  '#bc8cff',
+  '#f0883e',
+  '#39d353',
+  '#79c0ff',
+  '#ffa657',
+  '#ff7b72',
+];
+
 function getComplexityColor(complexity) {
-  if (complexity <= 5)  return '#3fb950'; // green
-  if (complexity <= 15) return '#d29922'; // yellow
-  return '#f85149';                        // red
+  if (complexity <= 5)  return '#3fb950';
+  if (complexity <= 15) return '#d29922';
+  return '#f85149';
 }
 
 function getLoCSize(loc) {
-  if (loc < 50)   return 36;
-  if (loc < 200)  return 44;
-  if (loc < 500)  return 52;
-  if (loc < 1000) return 62;
-  return 72;
+  if (loc < 50)   return 32;
+  if (loc < 200)  return 38;
+  if (loc < 500)  return 46;
+  if (loc < 1000) return 54;
+  return 64;
 }
 
 export function buildGraphElements(rawNodes, rawEdges) {
   const fileNodes = rawNodes.filter(n => n.type === 'file');
-  const dirNodes  = rawNodes.filter(n => n.type === 'directory');
+  const dirNodes  = rawNodes.filter(n => n.type === 'directory' && n.id !== '__root__');
 
-  // Group files by parent directory
-  const dirMap = {};
-  dirNodes.forEach(d => { dirMap[d.id] = d; });
-
-  // Assign positions using a simple grid layout per depth level
-  const depthBuckets = {};
-  fileNodes.forEach(n => {
-    const d = n.depth || 0;
-    depthBuckets[d] = depthBuckets[d] || [];
-    depthBuckets[d].push(n);
+  // Map each file to its immediate parent folder
+  const folderMap = {};
+  fileNodes.forEach(file => {
+    const parts  = file.path.replace(/\\/g, '/').split('/');
+    const parent = parts.length > 1 ? parts.slice(0, -1).join('/') : '__root__';
+    if (!folderMap[parent]) folderMap[parent] = [];
+    folderMap[parent].push(file);
   });
 
   const nodes = [];
-  const X_GAP = 220;
-  const Y_GAP = 110;
+  const edges = [];
 
-  Object.entries(depthBuckets).forEach(([depth, group]) => {
-    const col = parseInt(depth);
-    group.forEach((n, i) => {
-      const lang  = n.language || 'unknown';
-      const color = LANG_COLORS[lang] || LANG_COLORS.unknown;
-      const size  = getLoCSize(n.loc || 0);
+  // Layout constants
+  const FOLDER_PADDING_X  = 24;
+  const FOLDER_PADDING_Y  = 48;
+  const FILE_COL_WIDTH    = 160;
+  const FILE_ROW_HEIGHT   = 100;
+  const FILES_PER_ROW     = 3;
+  const FOLDER_GAP_X      = 80;
+  const FOLDER_GAP_Y      = 60;
 
-      nodes.push({
-        id:   n.id,
-        type: 'fileNode',
-        position: {
-          x: col * X_GAP + (i % 2 === 0 ? 0 : 30),
-          y: i * Y_GAP,
-        },
-        data: {
-          label:      n.label,
-          language:   lang,
-          color,
-          loc:        n.loc       || 0,
-          complexity: n.complexity || 0,
-          sizeBytes:  n.size_bytes || 0,
-          codeLines:  n.code_lines || 0,
-          path:       n.path,
-          complexityColor: getComplexityColor(n.complexity || 0),
-          nodeSize:   size,
-          raw:        n,
-        },
-      });
-    });
-  });
+  let folderX = 40;
+  let folderY = 40;
+  let maxHeightInRow = 0;
+  let colIndex = 0;
+  const FOLDERS_PER_ROW = 3;
 
-  const edges = rawEdges.map(e => ({
-    id:           e.id,
-    source:       e.source,
-    target:       e.target,
-    type:         'smoothstep',
-    animated:     false,
-    style:        { stroke: '#30363d', strokeWidth: 1.5 },
-    markerEnd:    { type: 'arrowclosed', color: '#30363d' },
-  }));
+  const folderEntries = Object.entries(folderMap);
 
-  return { nodes, edges };
-}
+  folderEntries.forEach(([folderPath, files], folderIdx) => {
+    const folderColor = FOLDER_COLORS[folderIdx % FOLDER_COLORS.length];
+    const folderLabel = folderPath === '__root__'
+      ? 'root'
+      : folderPath.replace(/\\/g, '/').split('/').pop();
+
+    // Calculate folder dimensions based on file count
+    const cols         = Math.min(files.length, FILES_PER_ROW);
+    const rows         = Math.ceil(files.length / FILES_PER_ROW);
+    const folderWidth  = cols * FILE_COL_WIDTH +
