@@ -1,15 +1,19 @@
 import React, { useState, useEffect } from 'react';
-import { explainFile, getFileContent } from '../api';
+import ReactMarkdown from 'react-markdown';
+import { explainFile, getFileContent, getReadme } from '../api';
 import './SidePanel.css';
 
 export default function SidePanel({ node, repoRoot, onClose }) {
-  const [explanation, setExplanation]   = useState('');
-  const [loadingAI, setLoadingAI]       = useState(false);
-  const [aiError, setAiError]           = useState('');
-  const [cached, setCached]             = useState(false);
-  const [fileContent, setFileContent]   = useState('');
-  const [loadingFile, setLoadingFile]   = useState(false);
-  const [activeTab, setActiveTab]       = useState('info');
+  const [explanation, setExplanation]     = useState('');
+  const [loadingAI, setLoadingAI]         = useState(false);
+  const [aiError, setAiError]             = useState('');
+  const [cached, setCached]               = useState(false);
+  const [fileContent, setFileContent]     = useState('');
+  const [loadingFile, setLoadingFile]     = useState(false);
+  const [activeTab, setActiveTab]         = useState('info');
+  const [readme, setReadme]               = useState(null);
+  const [loadingReadme, setLoadingReadme] = useState(false);
+  const [readmeError, setReadmeError]     = useState('');
 
   const filePath = node?.data?.path;
   const data     = node?.data || {};
@@ -21,6 +25,8 @@ export default function SidePanel({ node, repoRoot, onClose }) {
     setCached(false);
     setFileContent('');
     setActiveTab('info');
+    setReadme(null);
+    setReadmeError('');
   }, [filePath]);
 
   const handleExplain = async () => {
@@ -49,6 +55,21 @@ export default function SidePanel({ node, repoRoot, onClose }) {
       setFileContent(`// Error loading file: ${err.message}`);
     } finally {
       setLoadingFile(false);
+    }
+  };
+
+  const handleViewReadme = async () => {
+    setActiveTab('readme');
+    if (readme !== null) return;
+    setLoadingReadme(true);
+    setReadmeError('');
+    try {
+      const res = await getReadme(repoRoot);
+      setReadme(res);
+    } catch (err) {
+      setReadmeError(err.message);
+    } finally {
+      setLoadingReadme(false);
     }
   };
 
@@ -90,6 +111,12 @@ export default function SidePanel({ node, repoRoot, onClose }) {
         >
           Code
         </button>
+        <button
+          className={`sp-tab ${activeTab === 'readme' ? 'sp-tab--active' : ''}`}
+          onClick={handleViewReadme}
+        >
+          README
+        </button>
       </div>
 
       {/* Info Tab */}
@@ -121,7 +148,14 @@ export default function SidePanel({ node, repoRoot, onClose }) {
           </div>
 
           <div className="sp-section-title" style={{ marginTop: '16px' }}>Language</div>
-          <div className="sp-lang-badge" style={{ background: data.color + '22', border: `1px solid ${data.color}`, color: data.color }}>
+          <div
+            className="sp-lang-badge"
+            style={{
+              background: data.color + '22',
+              border: `1px solid ${data.color}`,
+              color: data.color
+            }}
+          >
             {data.language}
           </div>
 
@@ -151,18 +185,13 @@ export default function SidePanel({ node, repoRoot, onClose }) {
               </button>
             </div>
           )}
-
           {loadingAI && (
             <div className="sp-ai-loading">
               <div className="sp-spinner" />
               <span>Asking AI...</span>
             </div>
           )}
-
-          {aiError && (
-            <div className="sp-ai-error">{aiError}</div>
-          )}
-
+          {aiError && <div className="sp-ai-error">{aiError}</div>}
           {explanation && (
             <div className="sp-ai-result">
               <div className="sp-ai-text">{explanation}</div>
@@ -191,6 +220,40 @@ export default function SidePanel({ node, repoRoot, onClose }) {
             <pre className="sp-code-block">
               <code>{fileContent}</code>
             </pre>
+          )}
+        </div>
+      )}
+
+      {/* README Tab */}
+      {activeTab === 'readme' && (
+        <div className="sp-body sp-body--readme">
+          {loadingReadme && (
+            <div className="sp-ai-loading">
+              <div className="sp-spinner" />
+              <span>Loading README...</span>
+            </div>
+          )}
+          {readmeError && (
+            <div className="sp-ai-error">{readmeError}</div>
+          )}
+          {readme && !loadingReadme && (
+            readme.content ? (
+              <>
+                {readme.truncated && (
+                  <div className="sp-truncated-warning">
+                    ⚠ File is large — showing first 100KB
+                  </div>
+                )}
+                <div className="sp-readme-content">
+                  <ReactMarkdown>{readme.content}</ReactMarkdown>
+                </div>
+              </>
+            ) : (
+              <div className="sp-readme-empty">
+                <span>📄</span>
+                <p>No README found in this repository.</p>
+              </div>
+            )
           )}
         </div>
       )}

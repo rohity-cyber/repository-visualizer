@@ -163,3 +163,27 @@ def get_file_content(repo_path: str = Query(...), file_path: str = Query(...)):
         return {"content": content, "truncated": os.path.getsize(full_path) > 50_000}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+        
+@app.get("/api/readme")
+def get_readme(repo_path: str = Query(...)):
+    """Returns the README.md content if it exists in the repo root."""
+    base = os.path.expanduser(repo_path)
+    
+    # Check common README filenames
+    readme_names = ["README.md", "readme.md", "README.MD", "README.rst", "README.txt", "README"]
+    
+    for name in readme_names:
+        full_path = os.path.join(base, name)
+        if os.path.exists(full_path):
+            try:
+                with open(full_path, "r", encoding="utf-8", errors="replace") as f:
+                    content = f.read(100_000)
+                return {
+                    "content": content,
+                    "filename": name,
+                    "truncated": os.path.getsize(full_path) > 100_000
+                }
+            except Exception as e:
+                raise HTTPException(status_code=500, detail=str(e))
+    
+    return {"content": None, "filename": None, "truncated": False}

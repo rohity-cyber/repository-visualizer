@@ -1,5 +1,5 @@
 .side-panel {
-  width: 300px;
+  width: 320px;
   flex-shrink: 0;
   background: #161b22;
   border-left: 1px solid #21262d;
@@ -88,6 +88,10 @@
 }
 
 .sp-body--code {
+  padding: 0;
+}
+
+.sp-body--readme {
   padding: 0;
 }
 
@@ -264,4 +268,132 @@
 
 code {
   font-family: inherit;
+}
+
+/* README Tab */
+.sp-readme-content {
+  padding: 16px;
+  font-size: 13px;
+  color: #e6edf3;
+  line-height: 1.7;
+  overflow-y: auto;
+}
+
+.sp-readme-content h1,
+.sp-readme-content h2,
+.sp-readme-content h3 {
+  color: #e6edf3;
+  border-bottom: 1px solid #21262d;
+  padding-bottom: 6px;
+  margin: 16px 0 10px;
+}
+
+.sp-readme-content h1 { font-size: 18px; }
+.sp-readme-content h2 { font-size: 15px; }
+.sp-readme-content h3 { font-size: 13px; }
+
+.sp-readme-content p {
+  margin-bottom: 10px;
+  color: #8b949e;
+}
+
+.sp-readme-content a {
+  color: #58a6ff;
+  text-decoration: none;
+}
+
+.sp-readme-content a:hover {
+  text-decoration: underline;
+}
+
+.sp-readme-content code {
+  background: #0d1117;
+  border: 1px solid #21262d;
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-size: 11px;
+  color: #f0883e;
+}
+
+.sp-readme-content pre {
+  background: #0d1117;
+  border: 1px solid #21262d;
+  border-radius: 8px;
+  padding: 12px;
+  overflow-x: auto;
+  margin-bottom: 12px;
+}
+
+.sp-readme-content pre code {
+  background: none;
+  border: none;
+  padding: 0;
+  color: #8b949e;
+  font-size: 11px;
+}
+
+.sp-readme-content ul,
+.sp-readme-content ol {
+  padding-left: 20px;
+  margin-bottom: 10px;
+  color: #8b949e;
+}
+
+.sp-readme-content li {
+  margin-bottom: 4px;
+}
+
+.sp-readme-content blockquote {
+  border-left: 3px solid #30363d;
+  padding-left: 12px;
+  color: #484f58;
+  margin: 10px 0;
+}
+
+.sp-readme-content img {
+  max-width: 100%;
+  border-radius: 6px;
+}
+
+.sp-readme-content table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-bottom: 12px;
+  font-size: 12px;
+}
+
+.sp-readme-content th,
+.sp-readme-content td {
+  border: 1px solid #21262d;
+  padding: 6px 10px;
+  text-align: left;
+}
+
+.sp-readme-content th {
+  background: #0d1117;
+  color: #e6edf3;
+}
+
+.sp-truncated-warning {
+  background: #2d1f00;
+  border-bottom: 1px solid #d29922;
+  color: #d29922;
+  padding: 8px 16px;
+  font-size: 11px;
+}
+
+.sp-readme-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 40px 20px;
+  color: #484f58;
+  font-size: 13px;
+  text-align: center;
+}
+
+.sp-readme-empty span {
+  font-size: 32px;
 }
