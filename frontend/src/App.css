@@ -83,3 +83,65 @@
 @keyframes spin {
   to { transform: rotate(360deg); }
 }
+
+/* Override empty state to not show during loading */
+.canvas-wrapper {
+  position: relative;
+}
+
+/* Error banner improvement */
+.error-banner {
+  position: absolute;
+  top: 12px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 100;
+  background: #3d1a1a;
+  border: 1px solid #f85149;
+  color: #f85149;
+  padding: 10px 20px;
+  border-radius: 8px;
+  font-size: 13px;
+  max-width: 500px;
+  text-align: center;
+  animation: fadeIn 0.2s ease;
+}
+
+.empty-state {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  color: #484f58;
+  animation: fadeIn 0.3s ease;
+}
+
+.empty-icon {
+  font-size: 64px;
+  line-height: 1;
+  color: #21262d;
+  animation: float 3s ease-in-out infinite;
+}
+
+@keyframes float {
+  0%, 100% { transform: translateY(0px);  }
+  50%       { transform: translateY(-8px); }
+}
+
+.empty-state h2 {
+  font-size: 20px;
+  color: #8b949e;
+  font-weight: 500;
+}
+
+.empty-state p {
+  font-size: 14px;
+  color: #484f58;
+}
+
+.empty-state code {
+  font-size: 12px;
+  background: #161b22;
