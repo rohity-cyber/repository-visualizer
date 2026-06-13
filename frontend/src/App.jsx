@@ -18,6 +18,7 @@ export default function App() {
   const [repoRoot, setRepoRoot]         = useState('');
   const [searchQuery, setSearchQuery]   = useState('');
   const zoomToNodeRef                   = useRef(null);
+  const exportRef                       = useRef(null);
 
   const handleAnalyze = useCallback(async (path) => {
     if (!path.trim()) return;
@@ -49,6 +50,14 @@ export default function App() {
     }
   }, []);
 
+  const handleExport = useCallback(() => {
+    if (exportRef.current) {
+      // Use last segment of path as filename
+      const name = repoRoot.split(/[\\/]/).filter(Boolean).pop() || 'repoviz';
+      exportRef.current(name);
+    }
+  }, [repoRoot]);
+
   const displayNodes = nodes.map(node => ({
     ...node,
     data: {
@@ -72,6 +81,8 @@ export default function App() {
         stats={stats}
         searchQuery={searchQuery}
         setSearchQuery={setSearchQuery}
+        onExport={handleExport}
+        canExport={nodes.length > 0}
       />
       <div className="app-body">
         <Sidebar
@@ -105,6 +116,7 @@ export default function App() {
               onNodeClick={setSelectedNode}
               repoRoot={repoRoot}
               zoomToNodeRef={zoomToNodeRef}
+              exportRef={exportRef}
             />
           )}
         </div>

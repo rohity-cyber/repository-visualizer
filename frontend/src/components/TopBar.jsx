@@ -19,7 +19,7 @@ function saveHistory(path) {
   return updated;
 }
 
-export default function TopBar({ repoPath, setRepoPath, onAnalyze, loading, stats, searchQuery, setSearchQuery }) {
+export default function TopBar({ repoPath, setRepoPath, onAnalyze, loading, stats, searchQuery, setSearchQuery, onExport, canExport }) {
   const [history, setHistory]     = useState(loadHistory);
   const [showDropdown, setShowDropdown] = useState(false);
   const wrapperRef = useRef(null);
@@ -133,6 +133,16 @@ export default function TopBar({ repoPath, setRepoPath, onAnalyze, loading, stat
             <><span className="btn-spinner" />{isUrl ? 'Cloning...' : 'Scanning...'}</>
           ) : 'Analyze'}
         </button>
+
+        {canExport && (
+          <button
+            className="topbar-btn topbar-btn--export"
+            onClick={onExport}
+            title="Export graph as PNG"
+          >
+            ↓ Export PNG
+          </button>
+        )}
       </div>
 
       {stats && (

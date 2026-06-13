@@ -10,6 +10,7 @@ import ReactFlow, {
   useReactFlow,
   ReactFlowProvider,
 } from 'reactflow';
+import { toPng } from 'html-to-image';
 import 'reactflow/dist/style.css';
 import FileNode from './FileNode';
 import './GraphCanvas.css';
@@ -22,10 +23,11 @@ const minimapStyle = {
   borderRadius: '8px',
 };
 
-function Flow({ nodes: initNodes, edges: initEdges, onNodeClick, zoomToNodeRef }) {
+function Flow({ nodes: initNodes, edges: initEdges, onNodeClick, zoomToNodeRef, exportRef }) {
   const [nodes, setNodes, onNodesChange] = useNodesState(initNodes);
   const [edges, setEdges, onEdgesChange] = useEdgesState(initEdges);
   const { fitView, setCenter } = useReactFlow();
+  const flowWrapperRef = useRef(null);
 
   React.useEffect(() => {
     setNodes(initNodes);
@@ -54,44 +56,68 @@ function Flow({ nodes: initNodes, edges: initEdges, onNodeClick, zoomToNodeRef }
     }
   };
 
+  // Expose export function to parent via ref
+  exportRef.current = async (repoName) => {
+    const element = flowWrapperRef.current?.querySelector('.react-flow__viewport');
+    const wrapper  = flowWrapperRef.current;
+    if (!wrapper) return;
+
+    try {
+      const dataUrl = await toPng(wrapper, {
+        backgroundColor: '#0d1117',
+        quality: 1,
+        pixelRatio: 2,
+      });
+
+      const link = document.createElement('a');
+      link.download = `${repoName || 'repoviz'}-graph.png`;
+      link.href = dataUrl;
+      link.click();
+    } catch (err) {
+      console.error('Export failed:', err);
+    }
+  };
+
   return (
-    <ReactFlow
-      nodes={nodes}
-      edges={edges}
-      onNodesChange={onNodesChange}
-      onEdgesChange={onEdgesChange}
-      onConnect={onConnect}
-      onNodeClick={handleNodeClick}
-      nodeTypes={nodeTypes}
-      fitView
-      fitViewOptions={{ padding: 0.2 }}
-      minZoom={0.1}
-      maxZoom={3}
-      attributionPosition="bottom-right"
-    >
-      <Background
-        variant={BackgroundVariant.Dots}
-        gap={24}
-        size={1}
-        color="#21262d"
-      />
-      <Controls
-        style={{
-          background: '#161b22',
-          border: '1px solid #21262d',
-          borderRadius: '8px',
-        }}
-      />
-      <MiniMap
-        style={minimapStyle}
-        nodeColor={(node) => node.data?.color || '#484f58'}
-        maskColor="rgba(13,17,23,0.7)"
-      />
-    </ReactFlow>
+    <div ref={flowWrapperRef} style={{ width: '100%', height: '100%' }}>
+      <ReactFlow
+        nodes={nodes}
+        edges={edges}
+        onNodesChange={onNodesChange}
+        onEdgesChange={onEdgesChange}
+        onConnect={onConnect}
+        onNodeClick={handleNodeClick}
+        nodeTypes={nodeTypes}
+        fitView
+        fitViewOptions={{ padding: 0.2 }}
+        minZoom={0.1}
+        maxZoom={3}
+        attributionPosition="bottom-right"
+      >
+        <Background
+          variant={BackgroundVariant.Dots}
+          gap={24}
+          size={1}
+          color="#21262d"
+        />
+        <Controls
+          style={{
+            background: '#161b22',
+            border: '1px solid #21262d',
+            borderRadius: '8px',
+          }}
+        />
+        <MiniMap
+          style={minimapStyle}
+          nodeColor={(node) => node.data?.color || '#484f58'}
+          maskColor="rgba(13,17,23,0.7)"
+        />
+      </ReactFlow>
+    </div>
   );
 }
 
-export default function GraphCanvas({ nodes, edges, setNodes, setEdges, onNodeClick, repoRoot, zoomToNodeRef }) {
+export default function GraphCanvas({ nodes, edges, setNodes, setEdges, onNodeClick, repoRoot, zoomToNodeRef, exportRef }) {
   return (
     <div className="graph-canvas">
       <ReactFlowProvider>
@@ -100,6 +126,7 @@ export default function GraphCanvas({ nodes, edges, setNodes, setEdges, onNodeCl
           edges={edges}
           onNodeClick={onNodeClick}
           zoomToNodeRef={zoomToNodeRef}
+          exportRef={exportRef}
         />
       </ReactFlowProvider>
     </div>
