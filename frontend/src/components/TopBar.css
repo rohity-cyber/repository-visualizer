@@ -252,3 +252,14 @@
 .stat-divider {
   color: #30363d;
 }
+.topbar-btn--export {
+  background: #21262d;
+  color: #8b949e;
+  border: 1px solid #30363d;
+}
+
+.topbar-btn--export:hover:not(:disabled) {
+  background: #30363d;
+  color: #e6edf3;
+  border-color: #484f58;
+}
