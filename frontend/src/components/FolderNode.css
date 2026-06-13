@@ -1,0 +1,64 @@
+.folder-node {
+  background: #0d1117;
+  border: 1.5px solid var(--folder-color);
+  border-radius: 12px;
+  min-width: 180px;
+  max-width: 260px;
+  cursor: default;
+  transition: box-shadow 0.2s;
+  overflow: hidden;
+}
+
+.folder-node:hover {
+  box-shadow: 0 0 0 2px var(--folder-color), 0 4px 16px rgba(0,0,0,0.4);
+}
+
+.folder-node--selected {
+  box-shadow: 0 0 0 2px var(--folder-color), 0 0 20px var(--folder-color);
+}
+
+.folder-node__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 12px;
+  gap: 8px;
+}
+
+.folder-node__header-left {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  overflow: hidden;
+}
+
+.folder-node__icon {
+  font-size: 13px;
+  flex-shrink: 0;
+}
+
+.folder-node__label {
+  font-size: 12px;
+  font-weight: 600;
+  color: #e6edf3;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.folder-node__count {
+  font-size: 10px;
+  color: #484f58;
+  flex-shrink: 0;
+  background: #21262d;
+  padding: 2px 7px;
+  border-radius: 20px;
+}
+
+.folder-node__handle {
+  width: 8px !important;
+  height: 8px !important;
+  background: var(--folder-color) !important;
+  border: 2px solid #0d1117 !important;
+  opacity: 0.8;
+}
