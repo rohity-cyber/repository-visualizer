@@ -5,7 +5,7 @@ import os
 import re
 import ast
 from pathlib import Path
-from typing import Optional
+from typing import Optional, Callable
 
 
 SUPPORTED_EXTENSIONS = {
@@ -53,16 +53,30 @@ DEPENDENCY_PATTERNS = {
 
 
 class RepositoryAnalyzer:
-    def __init__(self, root_path: str, max_depth: int = 8, exclude_dirs: list = None):
-        self.root = Path(root_path).resolve()
-        self.max_depth = max_depth
-        self.exclude_dirs = set(exclude_dirs or [])
-        self.nodes = {}   # node_id -> node dict
-        self.edges = []   # list of edge dicts
+    def __init__(self, root_path: str, max_depth: int = 8, exclude_dirs: list = None, progress_callback: Callable = None):
+        self.root              = Path(root_path).resolve()
+        self.max_depth         = max_depth
+        self.exclude_dirs      = set(exclude_dirs or [])
+        self.nodes             = {}
+        self.edges             = []
+        self.progress_callback = progress_callback
+        self._total_files      = 0
+        self._scanned_files    = 0
 
     def analyze(self) -> dict:
+        # First pass: count total files for progress tracking
+        self._report_progress(0, "Counting files...")
+        self._total_files = self._count_files(self.root, depth=0)
+
+        # Second pass: actually analyze
+        self._report_progress(5, "Starting analysis...")
         self._traverse(self.root, depth=0)
+
+        self._report_progress(90, "Resolving dependencies...")
         self._resolve_edges()
+
+        self._report_progress(100, "Done!")
+
         return {
             "nodes": list(self.nodes.values()),
             "edges": self.edges,
@@ -74,12 +88,32 @@ class RepositoryAnalyzer:
             }
         }
 
+    def _report_progress(self, percent: int, message: str):
+        if self.progress_callback:
+            self.progress_callback(percent, message)
+
+    def _count_files(self, path: Path, depth: int) -> int:
+        if depth > self.max_depth or not path.is_dir():
+            return 0
+        count = 0
+        try:
+            for entry in path.iterdir():
+                if entry.name in self.exclude_dirs or entry.name.startswith("."):
+                    continue
+                if entry.is_file():
+                    count += 1
+                elif entry.is_dir():
+                    count += self._count_files(entry, depth + 1)
+        except PermissionError:
+            pass
+        return count
+
     def _traverse(self, path: Path, depth: int):
         if depth > self.max_depth:
             return
 
         relative = path.relative_to(self.root)
-        node_id = str(relative) if str(relative) != "." else "__root__"
+        node_id  = str(relative) if str(relative) != "." else "__root__"
 
         if path.is_dir():
             if path.name in self.exclude_dirs:
@@ -104,10 +138,10 @@ class RepositoryAnalyzer:
                 pass
 
         elif path.is_file():
-            ext = path.suffix.lower()
-            lang = SUPPORTED_EXTENSIONS.get(ext, "unknown")
+            ext     = path.suffix.lower()
+            lang    = SUPPORTED_EXTENSIONS.get(ext, "unknown")
             metrics = self._compute_metrics(path, lang)
-            deps = self._extract_dependencies(path, lang)
+            deps    = self._extract_dependencies(path, lang)
 
             self.nodes[node_id] = {
                 "id":           node_id,
@@ -120,6 +154,12 @@ class RepositoryAnalyzer:
                 "dependencies": deps,
                 **metrics,
             }
+
+            # Update progress
+            self._scanned_files += 1
+            if self._total_files > 0:
+                percent = 5 + int((self._scanned_files / self._total_files) * 80)
+                self._report_progress(percent, f"Scanning {path.name}...")
 
     def _compute_metrics(self, path: Path, lang: str) -> dict:
         try:
@@ -144,7 +184,7 @@ class RepositoryAnalyzer:
         }
 
     def _count_comments(self, lines: list, lang: str) -> int:
-        count = 0
+        count    = 0
         in_block = False
         for line in lines:
             stripped = line.strip()
@@ -167,27 +207,21 @@ class RepositoryAnalyzer:
         return count
 
     def _cyclomatic_complexity(self, path: Path, lines: list, lang: str) -> int:
-        """
-        Approximates cyclomatic complexity by counting decision points.
-        For Python, uses the AST for accuracy. For others, counts keywords.
-        """
         if lang == "python":
             try:
                 source = "".join(lines)
-                tree = ast.parse(source)
+                tree   = ast.parse(source)
                 complexity = 1
                 for node in ast.walk(tree):
                     if isinstance(node, (
                         ast.If, ast.While, ast.For, ast.ExceptHandler,
-                        ast.With, ast.Assert, ast.comprehension,
-                        ast.BoolOp,
+                        ast.With, ast.Assert, ast.comprehension, ast.BoolOp,
                     )):
                         complexity += 1
                 return complexity
             except SyntaxError:
                 pass
 
-        # Generic keyword counting for all other languages
         decision_keywords = re.compile(
             r'\b(if|else|elif|for|while|case|catch|except|&&|\|\||and|or|try|switch)\b'
         )
@@ -214,24 +248,17 @@ class RepositoryAnalyzer:
         return deps
 
     def _resolve_edges(self):
-        """
-        Matches extracted dependency strings to actual files in the repo.
-        Builds edges only between files that exist in the scanned tree.
-        """
-        # Build a lookup: filename stem -> list of node_ids
         stem_map: dict[str, list] = {}
         for node_id, node in self.nodes.items():
             if node["type"] == "file":
                 stem = Path(node["label"]).stem.lower()
                 stem_map.setdefault(stem, []).append(node_id)
 
-        # Build a lookup: relative path fragments -> node_id
         path_map: dict[str, str] = {}
         for node_id, node in self.nodes.items():
             if node["type"] == "file":
                 p = node["path"].replace("\\", "/").lower()
                 path_map[p] = node_id
-                # also index without extension
                 path_map[str(Path(p).with_suffix(""))] = node_id
 
         edge_set = set()
@@ -240,15 +267,13 @@ class RepositoryAnalyzer:
             if node["type"] != "file":
                 continue
             for dep in node.get("dependencies", []):
-                dep_clean = dep.replace(".", "/").lower().strip("/")
-                target_id = None
+                dep_clean  = dep.replace(".", "/").lower().strip("/")
+                target_id  = None
 
-                # Try direct path match
                 if dep_clean in path_map:
                     target_id = path_map[dep_clean]
                 else:
-                    # Try stem match (last segment of import)
-                    stem = Path(dep_clean).name.split(".")[-1]
+                    stem       = Path(dep_clean).name.split(".")[-1]
                     candidates = stem_map.get(stem, [])
                     if len(candidates) == 1:
                         target_id = candidates[0]
