@@ -13,21 +13,25 @@ import ReactFlow, {
 import { toPng } from 'html-to-image';
 import 'reactflow/dist/style.css';
 import FileNode from './FileNode';
+import FolderNode from './FolderNode';
 import './GraphCanvas.css';
 
-const nodeTypes = { fileNode: FileNode };
+const nodeTypes = {
+  fileNode:   FileNode,
+  folderNode: FolderNode,
+};
 
 const minimapStyle = {
   background: '#161b22',
-  border: '1px solid #21262d',
+  border:     '1px solid #21262d',
   borderRadius: '8px',
 };
 
 function Flow({ nodes: initNodes, edges: initEdges, onNodeClick, zoomToNodeRef, exportRef }) {
   const [nodes, setNodes, onNodesChange] = useNodesState(initNodes);
   const [edges, setEdges, onEdgesChange] = useEdgesState(initEdges);
-  const { fitView, setCenter } = useReactFlow();
-  const flowWrapperRef = useRef(null);
+  const { setCenter }                    = useReactFlow();
+  const flowWrapperRef                   = useRef(null);
 
   React.useEffect(() => {
     setNodes(initNodes);
@@ -40,7 +44,12 @@ function Flow({ nodes: initNodes, edges: initEdges, onNodeClick, zoomToNodeRef, 
   );
 
   const handleNodeClick = useCallback(
-    (_, node) => onNodeClick(node),
+    (_, node) => {
+      // Only open side panel for file nodes, not folder nodes
+      if (node.type === 'fileNode') {
+        onNodeClick(node);
+      }
+    },
     [onNodeClick]
   );
 
@@ -58,20 +67,17 @@ function Flow({ nodes: initNodes, edges: initEdges, onNodeClick, zoomToNodeRef, 
 
   // Expose export function to parent via ref
   exportRef.current = async (repoName) => {
-    const element = flowWrapperRef.current?.querySelector('.react-flow__viewport');
-    const wrapper  = flowWrapperRef.current;
+    const wrapper = flowWrapperRef.current;
     if (!wrapper) return;
-
     try {
       const dataUrl = await toPng(wrapper, {
         backgroundColor: '#0d1117',
-        quality: 1,
-        pixelRatio: 2,
+        quality:         1,
+        pixelRatio:      2,
       });
-
-      const link = document.createElement('a');
-      link.download = `${repoName || 'repoviz'}-graph.png`;
-      link.href = dataUrl;
+      const link      = document.createElement('a');
+      link.download   = `${repoName || 'repoviz'}-graph.png`;
+      link.href       = dataUrl;
       link.click();
     } catch (err) {
       console.error('Export failed:', err);
@@ -89,10 +95,12 @@ function Flow({ nodes: initNodes, edges: initEdges, onNodeClick, zoomToNodeRef, 
         onNodeClick={handleNodeClick}
         nodeTypes={nodeTypes}
         fitView
-        fitViewOptions={{ padding: 0.2 }}
-        minZoom={0.1}
+        fitViewOptions={{ padding: 0.15 }}
+        minZoom={0.05}
         maxZoom={3}
         attributionPosition="bottom-right"
+        elevateNodesOnSelect={false}
+        nodesDraggable={true}
       >
         <Background
           variant={BackgroundVariant.Dots}
@@ -102,14 +110,17 @@ function Flow({ nodes: initNodes, edges: initEdges, onNodeClick, zoomToNodeRef, 
         />
         <Controls
           style={{
-            background: '#161b22',
-            border: '1px solid #21262d',
+            background:   '#161b22',
+            border:       '1px solid #21262d',
             borderRadius: '8px',
           }}
         />
         <MiniMap
           style={minimapStyle}
-          nodeColor={(node) => node.data?.color || '#484f58'}
+          nodeColor={(node) => {
+            if (node.type === 'folderNode') return node.data?.color || '#30363d';
+            return node.data?.color || '#484f58';
+          }}
           maskColor="rgba(13,17,23,0.7)"
         />
       </ReactFlow>
