@@ -51,3 +51,37 @@ export async function getReadme(repoPath) {
     throw new Error(detail);
   }
 }
+
+export function analyzeRepoWithProgress(path, onProgress, onComplete, onError) {
+  const url = `${BASE}/api/analyze-progress?path=${encodeURIComponent(path)}&max_depth=8`;
+  const source = new EventSource(url);
+
+  source.onmessage = (event) => {
+    try {
+      const data = JSON.parse(event.data);
+
+      if (data.error) {
+        source.close();
+        onError(data.message);
+        return;
+      }
+
+      onProgress(data.percent, data.message);
+
+      if (data.percent === 100 && data.result) {
+        source.close();
+        onComplete(data.result);
+      }
+    } catch (err) {
+      source.close();
+      onError('Failed to parse progress data');
+    }
+  };
+
+  source.onerror = () => {
+    source.close();
+    onError('Connection to server lost');
+  };
+
+  return source;
+}

@@ -6,6 +6,10 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel
 from typing import Optional
+from fastapi.responses import StreamingResponse
+import asyncio
+import json
+import threading
 import os
 import hashlib
 import subprocess
@@ -187,3 +191,84 @@ def get_readme(repo_path: str = Query(...)):
                 raise HTTPException(status_code=500, detail=str(e))
     
     return {"content": None, "filename": None, "truncated": False}
+
+@app.get("/api/analyze-progress")
+async def analyze_with_progress(path: str = Query(...), max_depth: int = Query(8)):
+    """
+    SSE endpoint that streams progress updates while analyzing a repo.
+    Frontend connects to this and receives real-time progress events.
+    """
+
+    async def event_stream():
+        queue = asyncio.Queue()
+        loop  = asyncio.get_event_loop()
+
+        def progress_callback(percent: int, message: str):
+            loop.call_soon_threadsafe(
+                queue.put_nowait,
+                {"percent": percent, "message": message}
+            )
+
+        def run_analysis():
+            try:
+                resolved = path
+                tmp_dir  = None
+
+                if is_github_url(path):
+                    progress_callback(2, "Cloning repository...")
+                    tmp_dir  = clone_repo(path)
+                    resolved = tmp_dir
+
+                exclude = [
+                    ".git", "__pycache__", "node_modules", ".venv", "venv",
+                    "env", "dist", "build", ".next", ".cache", "coverage",
+                    ".mypy_cache", ".pytest_cache"
+                ]
+
+                analyzer = RepositoryAnalyzer(
+                    resolved,
+                    max_depth=max_depth,
+                    exclude_dirs=exclude,
+                    progress_callback=progress_callback
+                )
+                result = analyzer.analyze()
+
+                loop.call_soon_threadsafe(
+                    queue.put_nowait,
+                    {"percent": 100, "message": "Done!", "result": result}
+                )
+
+                if tmp_dir:
+                    import shutil
+                    shutil.rmtree(tmp_dir, ignore_errors=True)
+
+            except Exception as e:
+                loop.call_soon_threadsafe(
+                    queue.put_nowait,
+                    {"percent": -1, "message": str(e), "error": True}
+                )
+
+        # Run analysis in background thread so SSE can stream
+        thread = threading.Thread(target=run_analysis, daemon=True)
+        thread.start()
+
+        while True:
+            try:
+                data = await asyncio.wait_for(queue.get(), timeout=120)
+                yield f"data: {json.dumps(data)}\n\n"
+
+                if data.get("percent") == 100 or data.get("error"):
+                    break
+            except asyncio.TimeoutError:
+                yield f"data: {json.dumps({'percent': -1, 'message': 'Timeout', 'error': True})}\n\n"
+                break
+
+    return StreamingResponse(
+        event_stream(),
+        media_type="text/event-stream",
+        headers={
+            "Cache-Control":               "no-cache",
+            "X-Accel-Buffering":           "no",
+            "Access-Control-Allow-Origin": "*",
+        }
+    )
