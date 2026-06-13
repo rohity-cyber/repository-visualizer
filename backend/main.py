@@ -167,15 +167,15 @@ def get_file_content(repo_path: str = Query(...), file_path: str = Query(...)):
         return {"content": content, "truncated": os.path.getsize(full_path) > 50_000}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
-        
+
+
 @app.get("/api/readme")
 def get_readme(repo_path: str = Query(...)):
     """Returns the README.md content if it exists in the repo root."""
     base = os.path.expanduser(repo_path)
-    
-    # Check common README filenames
+
     readme_names = ["README.md", "readme.md", "README.MD", "README.rst", "README.txt", "README"]
-    
+
     for name in readme_names:
         full_path = os.path.join(base, name)
         if os.path.exists(full_path):
@@ -189,8 +189,9 @@ def get_readme(repo_path: str = Query(...)):
                 }
             except Exception as e:
                 raise HTTPException(status_code=500, detail=str(e))
-    
+
     return {"content": None, "filename": None, "truncated": False}
+
 
 @app.get("/api/analyze-progress")
 async def analyze_with_progress(path: str = Query(...), max_depth: int = Query(8)):
@@ -201,7 +202,13 @@ async def analyze_with_progress(path: str = Query(...), max_depth: int = Query(8
 
     async def event_stream():
         queue = asyncio.Queue()
-        loop  = asyncio.get_event_loop()
+
+        # FIX: Use get_running_loop() instead of the deprecated get_event_loop().
+        # get_event_loop() in Python 3.10+ issues a DeprecationWarning and in
+        # 3.12+ can return a different loop (or raise) when called from inside
+        # an already-running async context, causing call_soon_threadsafe to post
+        # to the wrong loop and the queue to never receive messages.
+        loop = asyncio.get_running_loop()
 
         def progress_callback(percent: int, message: str):
             loop.call_soon_threadsafe(
@@ -239,7 +246,6 @@ async def analyze_with_progress(path: str = Query(...), max_depth: int = Query(8
                 )
 
                 if tmp_dir:
-                    import shutil
                     shutil.rmtree(tmp_dir, ignore_errors=True)
 
             except Exception as e:

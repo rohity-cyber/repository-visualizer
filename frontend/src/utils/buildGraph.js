@@ -57,7 +57,8 @@ export function buildGraphElements(rawNodes, rawEdges) {
 
   const folderMap = {};
   fileNodes.forEach(file => {
-    const parts  = file.path.replace(/\\/g, '/').split('/');
+    // FIX #7: filter out empty segments and literal "." from Windows paths
+    const parts  = file.path.replace(/\\/g, '/').split('/').filter(p => p && p !== '.');
     const parent = parts.length > 1 ? parts.slice(0, -1).join('/') : '__root__';
     if (!folderMap[parent]) folderMap[parent] = [];
     folderMap[parent].push(file);

@@ -111,11 +111,12 @@ export default function SidePanel({ node, repoRoot, onClose }) {
         >
           Code
         </button>
+        {/* FIX #6: Renamed to "Repo README" to clarify it shows the root README */}
         <button
           className={`sp-tab ${activeTab === 'readme' ? 'sp-tab--active' : ''}`}
           onClick={handleViewReadme}
         >
-          README
+          Repo README
         </button>
       </div>
 
@@ -239,6 +240,10 @@ export default function SidePanel({ node, repoRoot, onClose }) {
           {readme && !loadingReadme && (
             readme.content ? (
               <>
+                {/* FIX #6: Show a note clarifying this is the root README */}
+                <div className="sp-readme-note">
+                  📁 Showing README from repository root
+                </div>
                 {readme.truncated && (
                   <div className="sp-truncated-warning">
                     ⚠ File is large — showing first 100KB

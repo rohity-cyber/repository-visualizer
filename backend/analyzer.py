@@ -40,10 +40,10 @@ SUPPORTED_EXTENSIONS = {
 
 DEPENDENCY_PATTERNS = {
     "python":     [r"^\s*import\s+([\w\.]+)", r"^\s*from\s+([\w\.]+)\s+import"],
-    "javascript": [r'(?:import|require)\s*[\(\'\"]([^\'\"]+)[\'\"\)]', r'from\s+[\'\"](.[^\'\"]+)[\'\"]'],
-    "typescript": [r'(?:import|require)\s*[\(\'\"]([^\'\"]+)[\'\"\)]', r'from\s+[\'\"](.[^\'\"]+)[\'\"]'],
-    "c":          [r'#include\s+[<\"]([\w\.\/]+)[>\"]'],
-    "cpp":        [r'#include\s+[<\"]([\w\.\/]+)[>\"]'],
+    "javascript": [r'(?:import|require)\s*[\(\'\"]([^\'"]+)[\'"\)]', r'from\s+[\'\"](.[^\'"]+)[\'\"]'],
+    "typescript": [r'(?:import|require)\s*[\(\'\"]([^\'"]+)[\'"\)]', r'from\s+[\'\"](.[^\'"]+)[\'\"]'],
+    "c":          [r'#include\s+[<\"]([\w\.\/]+)[>"]'],
+    "cpp":        [r'#include\s+[<\"]([\w\.\/]+)[>"]'],
     "java":       [r'import\s+([\w\.]+);'],
     "go":         [r'import\s+\"([\w\.\/]+)\"', r'"([\w\.\/]+)"'],
     "rust":       [r'use\s+([\w::]+);', r'extern crate\s+(\w+);'],
@@ -74,8 +74,6 @@ class RepositoryAnalyzer:
 
         self._report_progress(90, "Resolving dependencies...")
         self._resolve_edges()
-
-        self._report_progress(100, "Done!")
 
         return {
             "nodes": list(self.nodes.values()),
@@ -184,16 +182,27 @@ class RepositoryAnalyzer:
         }
 
     def _count_comments(self, lines: list, lang: str) -> int:
+        # FIX #4: Properly track block comment state for Python and C-style languages
         count    = 0
         in_block = False
         for line in lines:
             stripped = line.strip()
-            if lang in ("python",):
-                if stripped.startswith("#"):
+            if lang == "python":
+                if in_block:
+                    count += 1
+                    # Detect closing triple-quote (but not the opening one again)
+                    if stripped.endswith('"""') or stripped.endswith("'''"):
+                        in_block = False
+                elif stripped.startswith("#"):
                     count += 1
                 elif stripped.startswith('"""') or stripped.startswith("'''"):
                     count += 1
-                    in_block = not in_block
+                    # Only enter block mode if the triple-quote isn't closed on the same line
+                    closes_same_line = (
+                        stripped.count('"""') >= 2 or stripped.count("'''") >= 2
+                    )
+                    if not closes_same_line:
+                        in_block = True
             elif lang in ("javascript", "typescript", "java", "c", "cpp", "csharp", "go"):
                 if in_block:
                     count += 1
@@ -266,17 +275,43 @@ class RepositoryAnalyzer:
         for node_id, node in self.nodes.items():
             if node["type"] != "file":
                 continue
-            for dep in node.get("dependencies", []):
-                dep_clean  = dep.replace(".", "/").lower().strip("/")
-                target_id  = None
 
-                if dep_clean in path_map:
-                    target_id = path_map[dep_clean]
+            source_dir = str(Path(node["path"]).parent).replace("\\", "/").lower()
+            if source_dir == ".":
+                source_dir = ""
+
+            for dep in node.get("dependencies", []):
+                dep_clean = dep.strip()
+                target_id = None
+
+                # FIX #3: Handle JS/TS relative imports separately from Python dot-notation
+                if dep_clean.startswith("."):
+                    # Relative import (JS/TS style) — resolve against the source file's directory
+                    try:
+                        base = Path(source_dir) if source_dir else Path(".")
+                        resolved = str((base / dep_clean).resolve().relative_to(Path(".").resolve()))
+                        resolved = resolved.replace("\\", "/").lower()
+                    except ValueError:
+                        resolved = dep_clean.lstrip("./").lower()
+
+                    target_id = path_map.get(resolved) or path_map.get(str(Path(resolved).with_suffix("")))
+
+                    if not target_id:
+                        # Fallback: match by stem name only
+                        stem = Path(dep_clean).name.lstrip(".")
+                        candidates = stem_map.get(stem, [])
+                        if len(candidates) == 1:
+                            target_id = candidates[0]
                 else:
-                    stem       = Path(dep_clean).name.split(".")[-1]
-                    candidates = stem_map.get(stem, [])
-                    if len(candidates) == 1:
-                        target_id = candidates[0]
+                    # Python-style module or third-party — use dot-to-slash conversion
+                    dep_normalized = dep_clean.replace(".", "/").lower().strip("/")
+                    if dep_normalized in path_map:
+                        target_id = path_map[dep_normalized]
+                    else:
+                        stem       = Path(dep_normalized).name.split(".")[-1]
+                        candidates = stem_map.get(stem, [])
+                        if len(candidates) == 1:
+                            target_id = candidates[0]
 
                 if target_id and target_id != node_id:
                     edge_key = f"{node_id}||{target_id}"

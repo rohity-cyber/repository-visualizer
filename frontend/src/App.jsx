@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useRef } from 'react';
+import React, { useState, useCallback, useRef, useEffect } from 'react';
 import GraphCanvas from './components/GraphCanvas';
 import Sidebar from './components/Sidebar';
 import TopBar from './components/TopBar';
@@ -22,8 +22,27 @@ export default function App() {
   const zoomToNodeRef                   = useRef(null);
   const exportRef                       = useRef(null);
 
+  // FIX #2: Track the active EventSource so we can close it
+  const eventSourceRef = useRef(null);
+
+  // FIX #2: Close SSE on unmount
+  useEffect(() => {
+    return () => {
+      if (eventSourceRef.current) {
+        eventSourceRef.current.close();
+      }
+    };
+  }, []);
+
   const handleAnalyze = useCallback((path) => {
     if (!path.trim()) return;
+
+    // FIX #2: Close any existing SSE connection before starting a new one
+    if (eventSourceRef.current) {
+      eventSourceRef.current.close();
+      eventSourceRef.current = null;
+    }
+
     setLoading(true);
     setError('');
     setSelectedNode(null);
@@ -32,7 +51,7 @@ export default function App() {
     setSearchQuery('');
     setProgress({ percent: 0, message: 'Starting...' });
 
-    analyzeRepoWithProgress(
+    const source = analyzeRepoWithProgress(
       path,
       // onProgress
       (percent, message) => {
@@ -46,13 +65,17 @@ export default function App() {
         setStats(data.stats);
         setRepoRoot(path);
         setLoading(false);
+        eventSourceRef.current = null;
       },
       // onError
       (errMsg) => {
         setError(errMsg || 'Failed to analyze repository.');
         setLoading(false);
+        eventSourceRef.current = null;
       }
     );
+
+    eventSourceRef.current = source;
   }, []);
 
   const handleZoomToNode = useCallback((node) => {
@@ -64,7 +87,7 @@ export default function App() {
 
   const handleExport = useCallback(() => {
     if (exportRef.current) {
-      const name = repoRoot.split(/[\\/]/).filter(Boolean).pop() || 'repoviz';
+      const name = repoRoot.split(/[\\\/]/).filter(Boolean).pop() || 'repoviz';
       exportRef.current(name);
     }
   }, [repoRoot]);

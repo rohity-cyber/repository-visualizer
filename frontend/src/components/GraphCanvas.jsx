@@ -53,16 +53,23 @@ function Flow({ nodes: initNodes, edges: initEdges, onNodeClick, zoomToNodeRef, 
     [onNodeClick]
   );
 
-  // Expose zoomToNode to parent via ref
+  // FIX #1: Account for parent folder's absolute canvas position
   zoomToNodeRef.current = (node) => {
     const target = nodes.find(n => n.id === node.id);
-    if (target) {
-      setCenter(
-        target.position.x + (target.data.nodeSize || 44) / 2,
-        target.position.y + (target.data.nodeSize || 44) / 2,
-        { zoom: 1.8, duration: 600 }
-      );
-    }
+    if (!target) return;
+
+    const parent = target.parentNode
+      ? nodes.find(n => n.id === target.parentNode)
+      : null;
+
+    const offsetX = parent ? parent.position.x : 0;
+    const offsetY = parent ? parent.position.y : 0;
+
+    setCenter(
+      offsetX + target.position.x + (target.data.nodeSize || 44) / 2,
+      offsetY + target.position.y + (target.data.nodeSize || 44) / 2,
+      { zoom: 1.8, duration: 600 }
+    );
   };
 
   // Expose export function to parent via ref
