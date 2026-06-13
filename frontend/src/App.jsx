@@ -3,7 +3,8 @@ import GraphCanvas from './components/GraphCanvas';
 import Sidebar from './components/Sidebar';
 import TopBar from './components/TopBar';
 import SidePanel from './components/SidePanel';
-import { analyzeRepo } from './api';
+import ProgressBar from './components/ProgressBar';
+import { analyzeRepoWithProgress } from './api';
 import { buildGraphElements } from './utils/buildGraph';
 import './App.css';
 
@@ -17,10 +18,11 @@ export default function App() {
   const [stats, setStats]               = useState(null);
   const [repoRoot, setRepoRoot]         = useState('');
   const [searchQuery, setSearchQuery]   = useState('');
+  const [progress, setProgress]         = useState({ percent: 0, message: '' });
   const zoomToNodeRef                   = useRef(null);
   const exportRef                       = useRef(null);
 
-  const handleAnalyze = useCallback(async (path) => {
+  const handleAnalyze = useCallback((path) => {
     if (!path.trim()) return;
     setLoading(true);
     setError('');
@@ -28,19 +30,29 @@ export default function App() {
     setNodes([]);
     setEdges([]);
     setSearchQuery('');
+    setProgress({ percent: 0, message: 'Starting...' });
 
-    try {
-      const data = await analyzeRepo(path);
-      const { nodes: n, edges: e } = buildGraphElements(data.nodes, data.edges);
-      setNodes(n);
-      setEdges(e);
-      setStats(data.stats);
-      setRepoRoot(path);
-    } catch (err) {
-      setError(err.message || 'Failed to analyze repository.');
-    } finally {
-      setLoading(false);
-    }
+    analyzeRepoWithProgress(
+      path,
+      // onProgress
+      (percent, message) => {
+        setProgress({ percent, message });
+      },
+      // onComplete
+      (data) => {
+        const { nodes: n, edges: e } = buildGraphElements(data.nodes, data.edges);
+        setNodes(n);
+        setEdges(e);
+        setStats(data.stats);
+        setRepoRoot(path);
+        setLoading(false);
+      },
+      // onError
+      (errMsg) => {
+        setError(errMsg || 'Failed to analyze repository.');
+        setLoading(false);
+      }
+    );
   }, []);
 
   const handleZoomToNode = useCallback((node) => {
@@ -52,7 +64,6 @@ export default function App() {
 
   const handleExport = useCallback(() => {
     if (exportRef.current) {
-      // Use last segment of path as filename
       const name = repoRoot.split(/[\\/]/).filter(Boolean).pop() || 'repoviz';
       exportRef.current(name);
     }
@@ -93,6 +104,7 @@ export default function App() {
         />
         <div className="canvas-wrapper">
           {error && <div className="error-banner">{error}</div>}
+
           {!loading && nodes.length === 0 && !error && (
             <div className="empty-state">
               <div className="empty-icon">⬡</div>
@@ -101,12 +113,14 @@ export default function App() {
               <code>Example: https://github.com/pallets/flask</code>
             </div>
           )}
+
           {loading && (
-            <div className="empty-state">
-              <div className="spinner" />
-              <p>Scanning repository...</p>
-            </div>
+            <ProgressBar
+              percent={progress.percent}
+              message={progress.message}
+            />
           )}
+
           {nodes.length > 0 && (
             <GraphCanvas
               nodes={displayNodes}
