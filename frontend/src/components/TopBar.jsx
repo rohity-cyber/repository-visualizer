@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { FiGitBranch, FiSearch, FiDownload, FiFolder } from 'react-icons/fi';
 import './TopBar.css';
 
 const MAX_HISTORY = 5;
@@ -74,12 +75,13 @@ export default function TopBar({ repoPath, setRepoPath, onAnalyze, loading, stat
   return (
     <div className="topbar">
       <div className="topbar-brand">
-        <span className="brand-icon">⬡</span>
+        <FiGitBranch className="brand-icon" />
         <span className="brand-name">RepoViz</span>
       </div>
 
       <div className="topbar-input-group" ref={wrapperRef}>
         <div className="topbar-input-wrapper">
+          <FiFolder className="topbar-input-icon" />
           <input
             className="topbar-input"
             type="text"
@@ -140,30 +142,31 @@ export default function TopBar({ repoPath, setRepoPath, onAnalyze, loading, stat
             onClick={onExport}
             title="Export graph as PNG"
           >
-            ↓ Export PNG
+            <FiDownload style={{ marginRight: 5, verticalAlign: 'middle' }} /> Export PNG
           </button>
         )}
       </div>
 
       {stats && (
         <div className="topbar-search-group">
-          <input
-            className="topbar-search"
-            type="text"
-            placeholder="🔍 Search files..."
-            value={searchQuery}
-            onChange={e => setSearchQuery(e.target.value)}
-          />
+          <div className="topbar-search-wrapper">
+            <FiSearch className="topbar-search-icon" />
+            <input
+              className="topbar-search"
+              type="text"
+              placeholder="Search files..."
+              value={searchQuery}
+              onChange={e => setSearchQuery(e.target.value)}
+            />
+          </div>
         </div>
       )}
 
       {stats && (
         <div className="topbar-stats">
-          <span>{stats.total_files} files</span>
-          <span className="stat-divider">·</span>
-          <span>{stats.total_dirs} dirs</span>
-          <span className="stat-divider">·</span>
-          <span>{stats.total_edges} links</span>
+          <span className="topbar-stat-badge">{stats.total_files} files</span>
+          <span className="topbar-stat-badge">{stats.total_dirs} dirs</span>
+          <span className="topbar-stat-badge">{stats.total_edges} links</span>
         </div>
       )}
     </div>
