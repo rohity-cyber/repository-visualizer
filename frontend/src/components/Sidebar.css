@@ -1,17 +1,53 @@
+/* ──────────────────────────────────────────────
+   Sidebar — Ultra Premium GitDiagram Inspired
+────────────────────────────────────────────── */
 .sidebar {
-  width: 210px;
+  width: 280px;
   flex-shrink: 0;
-  background: #161b22;
-  border-right: 1px solid #21262d;
+  background: rgba(8, 8, 12, 0.85);
+  backdrop-filter: blur(32px) saturate(180%);
+  -webkit-backdrop-filter: blur(32px) saturate(180%);
+  border-right: 1px solid rgba(255, 255, 255, 0.03);
   display: flex;
   flex-direction: column;
-  overflow-y: auto;
-  padding-bottom: 16px;
+  overflow: hidden;
+  transition: width 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  position: relative;
+  z-index: 10;
+  box-shadow: 4px 0 24px rgba(0, 0, 0, 0.2);
 }
 
+.sidebar--collapsed {
+  width: 56px;
+}
+
+/* ── Toggle Button ── */
+.sidebar-toggle {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  margin: 14px auto 10px;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  color: #64748b;
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: all 0.2s ease;
+}
+
+.sidebar-toggle:hover {
+  background: rgba(255, 255, 255, 0.05);
+  color: #f1f5f9;
+}
+
+/* ── Sections ── */
 .sidebar-section {
-  padding: 14px 14px 10px;
-  border-bottom: 1px solid #21262d;
+  padding: 16px 20px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.03);
+  flex-shrink: 0;
 }
 
 .sidebar-section--files {
@@ -26,11 +62,23 @@
   font-size: 10px;
   font-weight: 700;
   text-transform: uppercase;
-  letter-spacing: 1px;
-  color: #484f58;
-  margin-bottom: 10px;
+  letter-spacing: 1.5px;
+  color: #475569;
+  margin-bottom: 14px;
+  white-space: nowrap;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  gap: 8px;
 }
 
+/* Hide labels when collapsed */
+.sidebar--collapsed .sidebar-title,
+.sidebar--collapsed .sidebar-hint {
+  display: none;
+}
+
+/* ── Language Legend ── */
 .legend-list {
   display: flex;
   flex-direction: column;
@@ -40,9 +88,22 @@
 .legend-item {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 10px;
   font-size: 12px;
-  color: #8b949e;
+  font-weight: 500;
+  color: #94a3b8;
+  white-space: nowrap;
+  overflow: hidden;
+  padding: 4px 8px;
+  border-radius: 6px;
+  transition: all 0.2s ease;
+  cursor: default;
+  margin-left: -8px;
+}
+
+.legend-item:hover {
+  background: rgba(255, 255, 255, 0.03);
+  color: #f8fafc;
 }
 
 .legend-dot {
@@ -50,82 +111,186 @@
   height: 8px;
   border-radius: 50%;
   flex-shrink: 0;
+  box-shadow: 0 0 8px currentColor;
+  opacity: 0.8;
 }
+
+.sidebar--collapsed .legend-item span:last-child {
+  display: none;
+}
+
+/* ── Complexity Bar ── */
+.complexity-bar-wrapper {
+  padding-top: 4px;
+}
+
+.complexity-bar {
+  height: 4px;
+  border-radius: 2px;
+  background: linear-gradient(90deg, 
+    #10b981 0%, 
+    #eab308 50%, 
+    #ef4444 100%
+  );
+  margin-bottom: 8px;
+  position: relative;
+  overflow: hidden;
+  opacity: 0.8;
+}
+
+.complexity-ticks {
+  display: flex;
+  justify-content: space-between;
+  font-size: 10px;
+  font-family: var(--font-mono);
+  color: #64748b;
+  letter-spacing: 0.5px;
+}
+
+.sidebar--collapsed .complexity-bar-wrapper { display: none; }
+
+/* ── Selected File ── */
+.sidebar-selected-section {
+  animation: fadeSlide 0.2s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  background: rgba(99, 102, 241, 0.05);
+  border-bottom: 1px solid rgba(99, 102, 241, 0.1);
+}
+
+@keyframes fadeSlide {
+  from { opacity: 0; transform: translateY(-4px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.sidebar--collapsed .sidebar-selected-section { display: none; }
 
 .selected-meta {
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 10px;
+  padding: 4px 0;
 }
 
 .meta-row {
   display: flex;
   justify-content: space-between;
   align-items: flex-start;
-  gap: 4px;
+  gap: 8px;
 }
 
 .meta-label {
   font-size: 11px;
-  color: #484f58;
+  color: #64748b;
   flex-shrink: 0;
+  font-weight: 500;
 }
 
 .meta-value {
-  font-size: 11px;
-  color: #8b949e;
+  font-size: 12px;
+  color: #e2e8f0;
   text-align: right;
   word-break: break-all;
+  font-weight: 500;
+  font-family: var(--font-mono);
 }
 
-/* File list */
+/* ── File Search ── */
+.sidebar-search-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.sidebar-search-icon {
+  position: absolute;
+  left: 10px;
+  color: #64748b;
+  font-size: 13px;
+  pointer-events: none;
+  transition: color 0.2s;
+}
+
 .sidebar-file-search {
   width: 100%;
-  background: #0d1117;
-  border: 1px solid #21262d;
+  height: 34px;
+  padding: 0 12px 0 32px;
+  background: rgba(15, 23, 42, 0.4);
+  border: 1px solid rgba(255, 255, 255, 0.06);
   border-radius: 6px;
-  padding: 6px 10px;
-  color: #e6edf3;
-  font-size: 11px;
+  color: #f1f5f9;
+  font-size: 12px;
+  font-family: var(--font-family);
   outline: none;
-  margin-bottom: 8px;
-  transition: border-color 0.2s;
+  transition: all 0.2s ease;
 }
 
 .sidebar-file-search:focus {
-  border-color: #58a6ff;
+  background: rgba(15, 23, 42, 0.8);
+  border-color: #8b5cf6;
+  box-shadow: 0 0 0 1px #8b5cf6;
 }
 
-.sidebar-file-search::placeholder {
-  color: #484f58;
+.sidebar-file-search:focus ~ .sidebar-search-icon,
+.sidebar-search-wrapper:focus-within .sidebar-search-icon {
+  color: #8b5cf6;
 }
 
+.sidebar-file-search::placeholder { color: #475569; }
+.sidebar--collapsed .sidebar-search-wrapper { display: none; }
+
+/* ── File List ── */
 .sidebar-file-list {
   flex: 1;
   overflow-y: auto;
   display: flex;
   flex-direction: column;
   gap: 2px;
-  padding-bottom: 8px;
+  padding: 0 8px 16px;
+  margin: 0 -8px; /* Offset padding to allow full-width hover */
 }
 
 .sidebar-file-item {
   display: flex;
   align-items: center;
-  gap: 6px;
-  padding: 5px 8px;
+  gap: 10px;
+  padding: 8px 12px;
   border-radius: 6px;
   cursor: pointer;
-  transition: background 0.15s;
+  transition: all 0.2s ease;
+  font-size: 12px;
+  min-width: 0;
+  position: relative;
+  margin: 0 8px;
+}
+
+.sidebar-file-item::before {
+  content: '';
+  position: absolute;
+  left: -2px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 2px;
+  height: 0;
+  background: #a78bfa;
+  border-radius: 2px;
+  transition: height 0.2s ease;
 }
 
 .sidebar-file-item:hover {
-  background: #21262d;
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.sidebar-file-item:hover::before {
+  height: 40%;
 }
 
 .sidebar-file-item--active {
-  background: #1f6feb22;
-  border: 1px solid #1f6feb44;
+  background: rgba(139, 92, 246, 0.1) !important;
+}
+
+.sidebar-file-item--active::before {
+  height: 60%;
+  background: #c4b5fd;
 }
 
 .sidebar-file-dot {
@@ -133,42 +298,67 @@
   height: 6px;
   border-radius: 50%;
   flex-shrink: 0;
+  opacity: 0.8;
+}
+
+.sidebar-file-item:hover .sidebar-file-dot,
+.sidebar-file-item--active .sidebar-file-dot {
+  opacity: 1;
+  box-shadow: 0 0 8px currentColor;
 }
 
 .sidebar-file-name {
-  font-size: 11px;
-  color: #8b949e;
+  font-size: 12px;
+  color: #94a3b8;
+  font-weight: 500;
   flex: 1;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+  transition: color 0.2s ease;
 }
 
-.sidebar-file-item:hover .sidebar-file-name {
-  color: #e6edf3;
-}
-
+.sidebar-file-item:hover .sidebar-file-name,
 .sidebar-file-item--active .sidebar-file-name {
-  color: #58a6ff;
+  color: #f8fafc;
 }
 
 .sidebar-file-complexity {
   font-size: 10px;
-  font-weight: 700;
+  font-weight: 600;
+  color: #cbd5e1;
   flex-shrink: 0;
+  padding: 2px 6px;
+  border-radius: 4px;
+  background: rgba(255,255,255,0.05);
+  font-family: var(--font-mono);
 }
 
 .sidebar-file-empty {
-  font-size: 11px;
-  color: #30363d;
-  padding: 8px;
+  font-size: 12px;
+  color: #475569;
+  padding: 24px 16px;
   text-align: center;
 }
 
+/* ── Hint ── */
 .sidebar-hint {
-  padding: 14px;
+  padding: 16px 20px;
   font-size: 11px;
-  color: #30363d;
-  line-height: 1.5;
+  color: #64748b;
+  line-height: 1.6;
   flex-shrink: 0;
+  border-top: 1px solid rgba(255, 255, 255, 0.03);
+  background: transparent;
+}
+
+/* ── Custom Scrollbar ── */
+.sidebar-file-list::-webkit-scrollbar { width: 4px; }
+.sidebar-file-list::-webkit-scrollbar-track { background: transparent; }
+.sidebar-file-list::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 4px;
+}
+.sidebar-file-list:hover::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.2);
 }
