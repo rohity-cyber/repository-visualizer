@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { FiChevronsLeft, FiChevronsRight, FiSearch } from 'react-icons/fi';
 import './Sidebar.css';
 
 const LANG_BADGE_COLORS = {
@@ -14,17 +15,27 @@ const LANG_BADGE_COLORS = {
   css:        '#563d7c',
 };
 
-export default function Sidebar({ stats, selectedNode, nodes, onZoomToNode }) {
+export default function Sidebar({ collapsed, onToggleCollapse, stats, selectedNode, nodes, onZoomToNode }) {
   const [fileSearch, setFileSearch] = useState('');
 
-  const fileNodes = (nodes || []).filter(n => n.data?.language !== undefined);
+  const fileNodes = (nodes || []).filter(n => n.type === 'fileNode' && n.data?.language !== undefined);
 
   const filtered = fileNodes.filter(n =>
     n.data.label.toLowerCase().includes(fileSearch.toLowerCase())
   );
 
   return (
-    <div className="sidebar">
+    <div className={`sidebar ${collapsed ? 'sidebar--collapsed' : ''}`}>
+      {/* Toggle button */}
+      <button
+        className="sidebar-toggle"
+        onClick={onToggleCollapse}
+        title={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+      >
+        {collapsed ? <FiChevronsRight /> : <FiChevronsLeft />}
+      </button>
+
+      {/* Language legend */}
       <div className="sidebar-section">
         <div className="sidebar-title">Legend</div>
         <div className="legend-list">
@@ -37,26 +48,22 @@ export default function Sidebar({ stats, selectedNode, nodes, onZoomToNode }) {
         </div>
       </div>
 
+      {/* Complexity gradient bar */}
       <div className="sidebar-section">
         <div className="sidebar-title">Complexity</div>
-        <div className="legend-list">
-          <div className="legend-item">
-            <span className="legend-dot" style={{ background: '#3fb950' }} />
-            <span>Low (≤ 5)</span>
-          </div>
-          <div className="legend-item">
-            <span className="legend-dot" style={{ background: '#d29922' }} />
-            <span>Medium (6–15)</span>
-          </div>
-          <div className="legend-item">
-            <span className="legend-dot" style={{ background: '#f85149' }} />
-            <span>High ({'>'} 15)</span>
+        <div className="complexity-bar-wrapper">
+          <div className="complexity-bar" />
+          <div className="complexity-ticks">
+            <span>Low ≤5</span>
+            <span>Med 6-15</span>
+            <span>High &gt;15</span>
           </div>
         </div>
       </div>
 
+      {/* Selected file */}
       {selectedNode && (
-        <div className="sidebar-section">
+        <div className="sidebar-section sidebar-selected-section">
           <div className="sidebar-title">Selected File</div>
           <div className="selected-meta">
             <div className="meta-row">
@@ -73,10 +80,7 @@ export default function Sidebar({ stats, selectedNode, nodes, onZoomToNode }) {
             </div>
             <div className="meta-row">
               <span className="meta-label">Complexity</span>
-              <span
-                className="meta-value"
-                style={{ color: selectedNode.data?.complexityColor }}
-              >
+              <span className="meta-value" style={{ color: selectedNode.data?.complexityColor }}>
                 {selectedNode.data?.complexity}
               </span>
             </div>
@@ -90,16 +94,20 @@ export default function Sidebar({ stats, selectedNode, nodes, onZoomToNode }) {
         </div>
       )}
 
+      {/* File list */}
       {fileNodes.length > 0 && (
         <div className="sidebar-section sidebar-section--files">
           <div className="sidebar-title">Files ({fileNodes.length})</div>
-          <input
-            className="sidebar-file-search"
-            type="text"
-            placeholder="Filter files..."
-            value={fileSearch}
-            onChange={e => setFileSearch(e.target.value)}
-          />
+          <div className="sidebar-search-wrapper">
+            <FiSearch className="sidebar-search-icon" />
+            <input
+              className="sidebar-file-search"
+              type="text"
+              placeholder="Filter files..."
+              value={fileSearch}
+              onChange={e => setFileSearch(e.target.value)}
+            />
+          </div>
           <div className="sidebar-file-list">
             {filtered.map(node => (
               <div
@@ -108,10 +116,7 @@ export default function Sidebar({ stats, selectedNode, nodes, onZoomToNode }) {
                 onClick={() => onZoomToNode(node)}
                 title={node.data.path}
               >
-                <span
-                  className="sidebar-file-dot"
-                  style={{ background: node.data.color }}
-                />
+                <span className="sidebar-file-dot" style={{ background: node.data.color }} />
                 <span className="sidebar-file-name">{node.data.label}</span>
                 <span
                   className="sidebar-file-complexity"
