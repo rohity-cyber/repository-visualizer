@@ -1,28 +1,37 @@
 import React, { memo } from 'react';
-import { Handle, Position } from 'reactflow';
+import { FiFolder } from 'react-icons/fi';
 import './FolderNode.css';
 
-function FolderNode({ data, selected }) {
-  const { label, fileCount, color } = data;
+/**
+ * FolderNode — A labeled header bar spanning all file columns in this group.
+ * Placed above the file nodes for this folder on the flat canvas.
+ * No handles — folder-level edges not used.
+ */
+function FolderNode({ data }) {
+  const { label, fileCount, color, sectionW, numCols } = data;
 
   return (
     <div
-      className={`folder-node ${selected ? 'folder-node--selected' : ''}`}
-      style={{ '--folder-color': color || '#30363d' }}
+      className="folder-node"
+      style={{
+        '--folder-color': color,
+        width: sectionW || 220,
+      }}
     >
-      <Handle type="target" position={Position.Left} className="folder-node__handle" />
+      {/* Left accent line */}
+      <div className="folder-node__accent" />
 
-      <div className="folder-node__header">
-        <div className="folder-node__header-left">
-          <span className="folder-node__icon">📁</span>
-          <span className="folder-node__label">{label}</span>
-        </div>
-        <span className="folder-node__count">
-          {fileCount} {fileCount === 1 ? 'file' : 'files'}
-        </span>
-      </div>
+      {/* Icon + Label */}
+      <FiFolder className="folder-node__icon" />
+      <span className="folder-node__name">{label}</span>
 
-      <Handle type="source" position={Position.Right} className="folder-node__handle" />
+      {/* File count badge */}
+      <span className="folder-node__count">{fileCount}</span>
+
+      {/* Columns hint (only if multi-column) */}
+      {numCols > 1 && (
+        <span className="folder-node__cols">×{numCols}</span>
+      )}
     </div>
   );
 }
