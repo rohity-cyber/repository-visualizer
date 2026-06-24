@@ -1,29 +1,134 @@
+/* ──────────────────────────────────────────────
+   GraphCanvas — Premium Visualization Surface
+────────────────────────────────────────────── */
 .graph-canvas {
   width: 100%;
   height: 100%;
 }
 
-/* Override React Flow control button styles */
+/* ── ReactFlow base overrides ── */
+.react-flow__renderer {
+  background: transparent;
+}
+
+/* ── Controls Panel ── */
+.react-flow__controls {
+  background: rgba(8, 8, 18, 0.88) !important;
+  backdrop-filter: blur(24px) !important;
+  -webkit-backdrop-filter: blur(24px) !important;
+  border: 1px solid rgba(255,255,255,0.08) !important;
+  border-radius: 12px !important;
+  box-shadow:
+    0 4px 24px rgba(0,0,0,0.7),
+    0 0 0 1px rgba(255,255,255,0.03) !important;
+  overflow: hidden;
+  bottom: 24px !important;
+  left: 20px !important;
+}
+
 .react-flow__controls-button {
-  background: #161b22 !important;
-  border-color: #30363d !important;
-  color: #8b949e !important;
-  fill: #8b949e !important;
+  background: transparent !important;
+  border: none !important;
+  border-bottom: 1px solid rgba(255,255,255,0.05) !important;
+  color: #4b5563 !important;
+  fill: #4b5563 !important;
+  width: 32px !important;
+  height: 32px !important;
+  transition: background 0.12s ease, color 0.12s ease, fill 0.12s ease !important;
+}
+
+.react-flow__controls-button:last-child {
+  border-bottom: none !important;
 }
 
 .react-flow__controls-button:hover {
-  background: #21262d !important;
+  background: rgba(139,92,246,0.12) !important;
+  color: #a78bfa !important;
+  fill: #a78bfa !important;
 }
 
+.react-flow__controls-button svg {
+  width: 13px !important;
+  height: 13px !important;
+}
+
+/* ── MiniMap ── */
+.react-flow__minimap {
+  background: rgba(5,5,12,0.90) !important;
+  border: 1px solid rgba(255,255,255,0.07) !important;
+  border-radius: 12px !important;
+  overflow: hidden;
+  box-shadow: 0 4px 24px rgba(0,0,0,0.7) !important;
+  bottom: 24px !important;
+  right: 20px !important;
+}
+
+/* ── Node animations ── */
+@keyframes nodeEnter {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+/* Folder nodes enter with fade */
+.react-flow__node-folderNode {
+  animation: nodeEnter 0.45s cubic-bezier(0.4, 0, 0.2, 1) both;
+}
+
+/* File nodes animation is handled internally by .file-node in FileNode.css */
+.react-flow__node-fileNode {
+  /* removed transform animation from here to prevent overriding ReactFlow's position */
+}
+
+/* ── Edge paths ── */
+.react-flow__edge-path {
+  stroke: rgba(139,92,246,0.25);
+  stroke-width: 1.5;
+  transition: stroke 0.2s ease, stroke-width 0.2s ease, opacity 0.2s ease;
+}
+
+.react-flow__edge:hover .react-flow__edge-path {
+  stroke: rgba(167,139,250,0.7);
+  stroke-width: 2;
+}
+
+/* Arrow markers */
+.react-flow__arrowhead {
+  fill: rgba(139,92,246,0.55);
+}
+
+/* ── Attribution ── */
 .react-flow__attribution {
   background: transparent !important;
-  color: #30363d !important;
 }
 
 .react-flow__attribution a {
-  color: #30363d !important;
+  color: rgba(255,255,255,0.10) !important;
+  font-size: 9px !important;
+  transition: color 0.15s !important;
 }
 
-.react-flow__edge-path {
-  stroke: #30363d;
+.react-flow__attribution a:hover {
+  color: rgba(255,255,255,0.25) !important;
+}
+
+/* ── Selection box ── */
+.react-flow__selection {
+  background: rgba(99,102,241,0.05) !important;
+  border: 1px solid rgba(99,102,241,0.35) !important;
+  border-radius: 6px;
+}
+
+/* ── Node selected ring ── */
+.react-flow__node.selected .group-node {
+  box-shadow:
+    0 0 0 2px rgba(99,102,241,0.6),
+    0 0 40px rgba(99,102,241,0.15);
+}
+
+/* ── Pane cursor ── */
+.react-flow__pane {
+  cursor: grab;
+}
+.react-flow__pane:active {
+  cursor: grabbing;
 }
