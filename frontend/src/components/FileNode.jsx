@@ -4,61 +4,72 @@ import './FileNode.css';
 
 function FileNode({ data, selected }) {
   const {
-    label = '',
-    language = '',
-    color = '#6366f1',
-    groupColor = '#6366f1',
-    complexity = 0,
+    label           = '',
+    language        = '',
+    color           = '#6366f1',
+    groupColor      = '#6366f1',
+    complexity      = 0,
     complexityColor = '#22c55e',
-    loc = 0,
-    nodeWidth  = 220,
-    nodeHeight = 52,
-    animationDelay = 0,
+    loc             = 0,
+    connectionCount = 0,
+    nodeWidth       = 220,
+    nodeHeight      = 64,
+    animationDelay  = 0,
     highlighted,
     dimmed,
+    connected,
   } = data;
 
-  const displayName = label.length > 24 ? label.slice(0, 23) + '…' : label;
+  // Trim long names with ellipsis
+  const displayName = label.length > 22 ? label.slice(0, 21) + '…' : label;
 
   return (
     <div
       className={[
-        'file-node',
-        selected     ? 'file-node--selected'    : '',
-        highlighted  ? 'file-node--highlighted' : '',
-        dimmed       ? 'file-node--dimmed'      : '',
+        'fn',
+        selected    ? 'fn--selected'    : '',
+        highlighted ? 'fn--highlighted' : '',
+        dimmed      ? 'fn--dimmed'      : '',
+        connected   ? 'fn--connected'   : '',
       ].filter(Boolean).join(' ')}
       style={{
         width:  nodeWidth,
         height: nodeHeight,
-        '--node-color':       color,
-        '--group-color':      groupColor,
-        '--complexity-color': complexityColor,
-        animationDelay:       animationDelay + 'ms',
+        '--c':  color,
+        '--cc': complexityColor,
+        animationDelay: animationDelay + 'ms',
       }}
     >
-      <Handle type="target" position={Position.Left}  className="file-node__handle file-node__handle--left"  id="left" />
-      <Handle type="source" position={Position.Right} className="file-node__handle file-node__handle--right" id="right" />
-      <Handle type="target" position={Position.Top}   className="file-node__handle file-node__handle--top"   id="top" />
-      <Handle type="source" position={Position.Bottom} className="file-node__handle file-node__handle--bot"  id="bottom" />
+      {/* ReactFlow connection handles — visible on hover/active */}
+      <Handle type="target" position={Position.Left}   className="fn__h fn__h--l" id="left"   />
+      <Handle type="source" position={Position.Right}  className="fn__h fn__h--r" id="right"  />
+      <Handle type="target" position={Position.Top}    className="fn__h fn__h--t" id="top"    />
+      <Handle type="source" position={Position.Bottom} className="fn__h fn__h--b" id="bottom" />
 
-      {/* Language accent strip */}
-      <div className="file-node__stripe" />
+      {/* Language colour accent bar */}
+      <div className="fn__bar" />
 
-      {/* Main content */}
-      <div className="file-node__inner">
-        <div className="file-node__info">
-          <span className="file-node__name">{displayName}</span>
-          <span className="file-node__lang">{language}</span>
+      {/* Card body */}
+      <div className="fn__body">
+        {/* Row 1: filename + connection count */}
+        <div className="fn__row fn__row--top">
+          <span className="fn__name">{displayName}</span>
+          {connectionCount > 0 && (
+            <span className="fn__conn" title={`${connectionCount} connections`}>
+              {connectionCount}
+            </span>
+          )}
         </div>
-        <div className="file-node__stats">
-          <span className="file-node__loc">{loc}</span>
-          <span
-            className="file-node__badge"
-            style={{ color: complexityColor }}
-          >
-            {complexity}
-          </span>
+
+        {/* Row 2: language + metrics */}
+        <div className="fn__row fn__row--bot">
+          <span className="fn__lang">{language || 'unknown'}</span>
+          <div className="fn__metrics">
+            <span className="fn__loc">{loc}L</span>
+            <span className="fn__cx" style={{ color: complexityColor, borderColor: `${complexityColor}44` }}>
+              {complexity}
+            </span>
+          </div>
         </div>
       </div>
     </div>

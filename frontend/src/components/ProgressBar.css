@@ -1,5 +1,5 @@
 /* ──────────────────────────────────────────────
-   ProgressBar — Premium Loading Overlay
+   ProgressBar — Theme-aware Premium Loading Overlay
 ────────────────────────────────────────────── */
 @keyframes overlayFadeIn {
   from { opacity: 0; }
@@ -15,7 +15,7 @@
   position: absolute;
   inset: 0;
   z-index: 200;
-  background: rgba(5, 5, 10, 0.88);
+  background: var(--t-panel-bg);
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
   display: flex;
@@ -32,7 +32,7 @@
   left: 30%;
   width: 300px;
   height: 300px;
-  background: radial-gradient(circle, rgba(99,102,241,0.08) 0%, transparent 70%);
+  background: radial-gradient(circle, var(--t-orb1) 0%, transparent 70%);
   pointer-events: none;
   animation: orbPulse 4s ease-in-out infinite;
 }
@@ -44,7 +44,7 @@
   right: 25%;
   width: 200px;
   height: 200px;
-  background: radial-gradient(circle, rgba(6,182,212,0.06) 0%, transparent 70%);
+  background: radial-gradient(circle, var(--t-orb2) 0%, transparent 70%);
   pointer-events: none;
   animation: orbPulse 5s ease-in-out infinite reverse;
 }
@@ -58,16 +58,16 @@
   position: relative;
   z-index: 1;
   width: 440px;
-  background: rgba(255, 255, 255, 0.04);
+  background: var(--t-surface);
   backdrop-filter: blur(32px);
   -webkit-backdrop-filter: blur(32px);
-  border: 1px solid rgba(99,102,241,0.25);
+  border: 1px solid var(--t-border-focus);
   border-radius: 20px;
   padding: 32px;
   box-shadow: 
-    0 0 0 1px rgba(255,255,255,0.03),
-    0 0 60px rgba(99,102,241,0.12),
-    0 20px 80px rgba(0,0,0,0.7);
+    0 0 0 1px var(--t-border),
+    0 0 60px var(--t-accent-glow),
+    0 20px 80px rgba(0,0,0,0.4);
   display: flex;
   flex-direction: column;
   gap: 22px;
@@ -80,7 +80,7 @@
   position: absolute;
   top: 0; left: 0; right: 0;
   height: 1px;
-  background: linear-gradient(90deg, transparent, #6366f1, #8b5cf6, #06b6d4, transparent);
+  background: linear-gradient(90deg, transparent, var(--t-accent), var(--t-accent2), var(--t-accent), transparent);
   border-radius: 20px 20px 0 0;
 }
 
@@ -92,10 +92,7 @@
 
 .progress-icon {
   font-size: 30px;
-  background: var(--gradient-accent);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
+  color: var(--t-accent2);
   animation: float 2.5s ease-in-out infinite;
   flex-shrink: 0;
 }
@@ -108,10 +105,7 @@
 .progress-title {
   font-size: 16px;
   font-weight: 800;
-  background: var(--gradient-accent);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
+  color: var(--t-text);
   letter-spacing: -0.3px;
 }
 
@@ -119,7 +113,7 @@
 .progress-track {
   width: 100%;
   height: 6px;
-  background: rgba(255,255,255,0.05);
+  background: var(--t-border);
   border-radius: var(--radius-full);
   overflow: hidden;
   position: relative;
@@ -127,13 +121,13 @@
 
 .progress-fill {
   height: 100%;
-  background: var(--gradient-accent);
+  background: var(--t-btn-bg);
   border-radius: var(--radius-full);
   transition: width 0.5s cubic-bezier(0.4, 0, 0.2, 1);
   position: relative;
   overflow: hidden;
   min-width: 4px;
-  box-shadow: 0 0 12px rgba(99,102,241,0.5);
+  box-shadow: 0 0 12px var(--t-accent-glow);
 }
 
 /* Shimmer effect */
@@ -166,7 +160,7 @@
 
 .progress-message {
   font-size: 12px;
-  color: var(--color-text-muted);
+  color: var(--t-text-muted);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -183,10 +177,7 @@
 .progress-percent {
   font-size: 28px;
   font-weight: 800;
-  background: var(--gradient-accent);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
+  color: var(--t-accent2);
   font-variant-numeric: tabular-nums;
   flex-shrink: 0;
   letter-spacing: -1px;

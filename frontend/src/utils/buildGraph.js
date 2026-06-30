@@ -57,22 +57,30 @@ function getTopLevelGroup(filePath) {
 }
 
 /* ── Layout constants ──────────────────────────── */
-const FILE_W          = 210;   // file card width
-const FILE_H          = 50;    // file card height
-const FILE_GAP_Y      = 6;     // vertical gap between file cards
-const FILE_INNER_GAP  = 10;    // horizontal gap between columns within a group
+const FILE_W          = 220;   // file card width
+const FILE_H          = 64;    // file card height
+const FILE_GAP_Y      = 8;     // vertical gap between file cards
+const FILE_INNER_GAP  = 16;    // horizontal gap between columns within a group
 const MAX_COL_FILES   = 10;    // max files per column before wrapping within group
-const FOLDER_H        = 36;    // folder header height
-const FOLDER_ABOVE    = 8;     // gap between folder header and first file
-const GROUP_PAD       = 14;    // padding around the group contents
+const FOLDER_H        = 38;    // folder header height
+const FOLDER_ABOVE    = 10;    // gap between folder header and first file
+const GROUP_PAD       = 16;    // padding around the group contents
 const GROUP_COLS      = 4;     // how many groups per row before wrapping
-const GROUP_GAP_X     = 70;    // horizontal gap between group columns
-const GROUP_GAP_Y     = 80;    // vertical gap between group rows
+const GROUP_GAP_X     = 100;   // horizontal gap between group columns (more room for edges)
+const GROUP_GAP_Y     = 90;    // vertical gap between group rows
 const CANVAS_X        = 40;
 const CANVAS_Y        = 40;
 
 export function buildGraphElements(rawNodes, rawEdges) {
-  const fileNodes = rawNodes.filter(n => n.type === 'file');
+  const fileNodes    = rawNodes.filter(n => n.type === 'file');
+  const fileLabelMap = new Map();  // id → label, for edge tooltips
+
+  /* ── Pre-compute connection counts ── */
+  const connCount = new Map();  // id → number of edges touching this node
+  rawEdges.forEach(e => {
+    connCount.set(e.source, (connCount.get(e.source) || 0) + 1);
+    connCount.set(e.target, (connCount.get(e.target) || 0) + 1);
+  });
 
   /* ── Group by top-level directory ── */
   const groupMap = {};
@@ -191,6 +199,7 @@ export function buildGraphElements(rawNodes, rawEdges) {
           codeLines:       file.code_lines  || 0,
           path:            file.path,
           complexityColor: getComplexityColor(file.complexity || 0),
+          connectionCount: connCount.get(file.id) || 0,
           nodeWidth:       FILE_W,
           nodeHeight:      FILE_H,
           animationDelay:  groupIdx * 20 + fileIdx * 8,
@@ -199,43 +208,55 @@ export function buildGraphElements(rawNodes, rawEdges) {
         style:     { width: FILE_W, height: FILE_H, zIndex: 2 },
         draggable: true,
       });
+
+      // Store label for edge tooltips
+      fileLabelMap.set(file.id, file.label);
     });
   });
 
   /* ── Edges ── */
-  const nodeMap = new Map(nodes.map(n => [n.id, n]));
-  const edgeSet = new Set();
+  const nodeMap    = new Map(nodes.map(n => [n.id, n]));
+  const edgeSet    = new Set();
 
   rawEdges.forEach(e => {
     const sourceNode = nodeMap.get(e.source);
     const targetNode = nodeMap.get(e.target);
     if (!sourceNode || !targetNode) return;
-    
+
     const key = `${e.source}||${e.target}`;
     if (edgeSet.has(key)) return;
     edgeSet.add(key);
 
-    const sourceColor = sourceNode.data.color || 'rgba(139,92,246,0.35)';
+    const sourceColor  = sourceNode.data.color  || '#8b5cf6';
+    const sourceName   = fileLabelMap.get(e.source) || e.source;
+    const targetName   = fileLabelMap.get(e.target) || e.target;
+
+    // Use a hex-like visible opacity: ~80% solid
+    const visibleStroke = `${sourceColor}cc`;   // cc = ~80% opacity in hex
+    const arrowColor    = `${sourceColor}ee`;   // ee = ~93% opacity
 
     edges.push({
       id:        e.id,
       source:    e.source,
       target:    e.target,
-      type:      'default', // Bezier curve for smoother organic look
+      type:      'floatingEdge',
       animated:  false,
-      style:     { 
-        stroke: `color-mix(in srgb, ${sourceColor} 40%, transparent)`, 
-        strokeWidth: 1.5 
+      style:     {
+        stroke:      visibleStroke,
+        strokeWidth: 1.8,
       },
       markerEnd: {
         type:   'arrowclosed',
-        color:  `color-mix(in srgb, ${sourceColor} 60%, transparent)`,
-        width:  12,
-        height: 12,
+        color:  arrowColor,
+        width:  16,
+        height: 16,
       },
       data: {
-        baseColor: sourceColor
-      }
+        baseColor:  sourceColor,
+        sourceName,
+        targetName,
+        edgeType:   'imports',
+      },
     });
   });
 

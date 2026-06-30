@@ -1,46 +1,65 @@
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap');
 
+/* ═══════════════════════════════════════════════════════════
+   DARK THEME — Warm Espresso / Caramel (default)
+═══════════════════════════════════════════════════════════ */
 :root {
-  /* ── Deep Space Color Palette ── */
-  --color-bg:            #050508;
-  --color-bg-2:          #080810;
-  --color-surface:       rgba(255, 255, 255, 0.03);
-  --color-surface-md:    rgba(255, 255, 255, 0.06);
-  --color-surface-lg:    rgba(255, 255, 255, 0.09);
-  --color-border:        rgba(255, 255, 255, 0.07);
-  --color-border-md:     rgba(255, 255, 255, 0.13);
-  --color-border-lg:     rgba(255, 255, 255, 0.22);
-  --color-text:          #f0f2f5;
-  --color-text-muted:    #7e8a9a;
-  --color-text-subtle:   #3d4655;
+  /* Backgrounds */
+  --t-bg:             #1b1613; /* Elegant warm dark mocha */
+  --t-bg2:            #241f1a;
+  --t-surface:        rgba(196, 137, 63, 0.06);
+  --t-surface-hov:    rgba(196, 137, 63, 0.12);
+  --t-surface-act:    rgba(196, 137, 63, 0.18);
+  /* Borders */
+  --t-border:         rgba(196, 137, 63, 0.14);
+  --t-border-md:      rgba(196, 137, 63, 0.25);
+  --t-border-focus:   rgba(196, 137, 63, 0.65);
+  /* Text */
+  --t-text:           #f6eee3; /* Warm cream */
+  --t-text-2:         #d2c5b7; /* Dimmer cream */
+  --t-text-muted:     rgba(246, 238, 227, 0.45);
+  --t-text-subtle:    rgba(246, 238, 227, 0.22);
+  /* Accents */
+  --t-accent:         #a87843; /* Soft caramel */
+  --t-accent2:        #d49d5a; /* Warm honey */
+  --t-accent-soft:    rgba(196, 137, 63, 0.12);
+  --t-accent-glow:    rgba(196, 137, 63, 0.22);
+  /* Component backgrounds */
+  --t-topbar-bg:      rgba(27, 22, 19, 0.90);
+  --t-sidebar-bg:     rgba(22, 18, 15, 0.96);
+  --t-card-bg:        rgba(36, 30, 25, 0.96);
+  --t-card-bg-hov:    rgba(44, 37, 31, 0.98);
+  --t-dropdown-bg:    rgba(22, 18, 15, 0.98);
+  --t-panel-bg:       rgba(20, 16, 14, 0.96);
+  --t-input-bg:       rgba(255, 255, 255, 0.04);
+  --t-input-bg-hov:   rgba(255, 255, 255, 0.07);
+  /* Graph */
+  --t-graph-bg:       #171310;
+  --t-graph-dots:     rgba(196, 137, 63, 0.11);
+  /* Buttons */
+  --t-btn-bg:         linear-gradient(135deg, #7a4f2d 0%, #c4893f 100%);
+  --t-btn-shadow:     rgba(122, 79, 45, 0.40);
+  --t-btn-ghost-bg:   rgba(255, 255, 255, 0.04);
+  --t-btn-ghost-bor:  rgba(255, 255, 255, 0.10);
+  --t-btn-ghost-col:  rgba(255, 255, 255, 0.60);
+  /* Scrollbar */
+  --t-scroll-thumb:   rgba(196, 137, 63, 0.18);
+  --t-scroll-hover:   rgba(196, 137, 63, 0.30);
+  /* Body orbs */
+  --t-orb1:           rgba(122, 79, 45, 0.06);
+  --t-orb2:           rgba(196, 137, 63, 0.04);
+  /* Hint overlay */
+  --t-hint-bg:        rgba(20, 16, 14, 0.82);
+  --t-hint-col:       rgba(246, 238, 227, 0.35);
+  --t-hint-icon-col:  rgba(196, 137, 63, 0.55);
 
-  /* ── Vivid Accent System ── */
-  --accent-violet:       #7c3aed;
-  --accent-indigo:       #4f46e5;
-  --accent-cyan:         #06b6d4;
-  --accent-emerald:      #10b981;
-  --accent-pink:         #ec4899;
-  --accent-amber:        #f59e0b;
+  /* Semantic */
+  --color-success: #22c55e;
+  --color-warning: #f59e0b;
+  --color-danger: #ef4444;
+  --color-info: #60a5fa;
 
-  --accent-start:        #6366f1;
-  --accent-mid:          #8b5cf6;
-  --accent-end:          #06b6d4;
-
-  --gradient-accent:     linear-gradient(135deg, #6366f1 0%, #8b5cf6 50%, #06b6d4 100%);
-  --gradient-accent-h:   linear-gradient(135deg, #818cf8 0%, #a78bfa 50%, #22d3ee 100%);
-  --gradient-hero:       linear-gradient(135deg, #6366f1 0%, #7c3aed 40%, #06b6d4 100%);
-  --gradient-glow:       radial-gradient(ellipse at center, rgba(99,102,241,0.15) 0%, transparent 70%);
-  --gradient-mesh:       radial-gradient(at 40% 20%, rgba(99,102,241,0.08) 0px, transparent 50%),
-                         radial-gradient(at 80% 0%, rgba(139,92,246,0.05) 0px, transparent 50%),
-                         radial-gradient(at 0% 50%, rgba(6,182,212,0.05) 0px, transparent 50%);
-
-  /* ── Semantic Colors ── */
-  --color-success:       #22c55e;
-  --color-warning:       #f59e0b;
-  --color-danger:        #ef4444;
-  --color-info:          #60a5fa;
-
-  /* ── Spacing ── */
+  /* Spacing */
   --space-1: 4px;
   --space-2: 8px;
   --space-3: 12px;
@@ -50,52 +69,90 @@
   --space-8: 32px;
   --space-10: 40px;
 
-  /* ── Border Radius ── */
-  --radius-xs:   4px;
-  --radius-sm:   8px;
-  --radius-md:   12px;
-  --radius-lg:   18px;
-  --radius-xl:   24px;
+  /* Radius */
+  --radius-xs: 4px;
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 18px;
+  --radius-xl: 24px;
   --radius-full: 9999px;
 
-  /* ── Glass Effect ── */
-  --glass-bg:       rgba(255, 255, 255, 0.04);
-  --glass-bg-md:    rgba(255, 255, 255, 0.07);
-  --glass-bg-lg:    rgba(255, 255, 255, 0.10);
-  --glass-blur:     blur(20px);
-  --glass-blur-md:  blur(32px);
-  --glass-blur-lg:  blur(48px);
-  --glass-border:   1px solid rgba(255, 255, 255, 0.08);
-  --glass-border-md: 1px solid rgba(255, 255, 255, 0.14);
-
-  /* ── Shadows ── */
-  --shadow-xs:   0 1px 2px rgba(0,0,0,0.5);
-  --shadow-sm:   0 2px 8px rgba(0,0,0,0.5);
-  --shadow-md:   0 4px 24px rgba(0,0,0,0.6);
-  --shadow-lg:   0 8px 48px rgba(0,0,0,0.7);
-  --shadow-xl:   0 20px 80px rgba(0,0,0,0.8);
-  --shadow-glow-violet: 0 0 24px rgba(99,102,241,0.4);
-  --shadow-glow-cyan:   0 0 24px rgba(6,182,212,0.3);
-
-  /* ── Transitions ── */
-  --transition-fast:   0.12s cubic-bezier(0.4, 0, 0.2, 1);
-  --transition-base:   0.25s cubic-bezier(0.4, 0, 0.2, 1);
-  --transition-slow:   0.45s cubic-bezier(0.4, 0, 0.2, 1);
-  --transition-bounce: 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
-
-  /* ── Typography ── */
+  /* Typography */
   --font-family: 'Inter', 'Segoe UI', system-ui, -apple-system, sans-serif;
-  --font-mono:   'JetBrains Mono', 'Fira Code', 'Cascadia Code', monospace;
+  --font-mono: 'JetBrains Mono', 'Fira Code', monospace;
+
+  /* Transitions */
+  --transition-fast: 0.12s cubic-bezier(0.4, 0, 0.2, 1);
+  --transition-base: 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  --transition-slow: 0.45s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* ═══════════════════════════════════════════════════════════
+   LIGHT THEME — Warm Beige / Walnut Brown
+═══════════════════════════════════════════════════════════ */
+[data-theme="light"] {
+  /* Backgrounds */
+  --t-bg: #f4ede3;
+  --t-bg2: #ebe4d9;
+  --t-surface: rgba(139, 90, 43, 0.07);
+  --t-surface-hov: rgba(139, 90, 43, 0.12);
+  --t-surface-act: rgba(139, 90, 43, 0.18);
+  /* Borders */
+  --t-border: rgba(139, 90, 43, 0.16);
+  --t-border-md: rgba(139, 90, 43, 0.28);
+  --t-border-focus: rgba(122, 79, 45, 0.65);
+  /* Text */
+  --t-text: #2c1a10;
+  --t-text-2: #5a3d2b;
+  --t-text-muted: rgba(44, 26, 16, 0.55);
+  --t-text-subtle: rgba(44, 26, 16, 0.35);
+  /* Accents */
+  --t-accent: #8b5e3c;
+  --t-accent2: #c4893f;
+  --t-accent-soft: rgba(139, 94, 60, 0.13);
+  --t-accent-glow: rgba(139, 94, 60, 0.28);
+  /* Component backgrounds */
+  --t-topbar-bg: rgba(244, 237, 227, 0.94);
+  --t-sidebar-bg: rgba(237, 229, 218, 0.97);
+  --t-card-bg: rgba(255, 252, 248, 0.98);
+  --t-card-bg-hov: rgba(255, 255, 255, 1);
+  --t-dropdown-bg: rgba(250, 245, 238, 0.99);
+  --t-panel-bg: rgba(240, 234, 224, 0.98);
+  --t-input-bg: rgba(255, 255, 255, 0.60);
+  --t-input-bg-hov: rgba(255, 255, 255, 0.85);
+  /* Graph */
+  --t-graph-bg: #ede8de;
+  --t-graph-dots: rgba(139, 90, 43, 0.13);
+  /* Buttons */
+  --t-btn-bg: linear-gradient(135deg, #7a4f2d 0%, #c4893f 100%);
+  --t-btn-shadow: rgba(122, 79, 45, 0.32);
+  --t-btn-ghost-bg: rgba(139, 90, 43, 0.07);
+  --t-btn-ghost-bor: rgba(139, 90, 43, 0.18);
+  --t-btn-ghost-col: #5a3d2b;
+  /* Scrollbar */
+  --t-scroll-thumb: rgba(139, 90, 43, 0.22);
+  --t-scroll-hover: rgba(139, 90, 43, 0.38);
+  /* Body orbs */
+  --t-orb1: rgba(196, 137, 63, 0.10);
+  --t-orb2: rgba(139, 90, 43, 0.07);
+  /* Hint overlay */
+  --t-hint-bg: rgba(237, 229, 218, 0.88);
+  --t-hint-col: rgba(44, 26, 16, 0.45);
+  --t-hint-icon-col: rgba(139, 90, 43, 0.65);
 }
 
 /* ── Global Reset ── */
-*, *::before, *::after {
+*,
+*::before,
+*::after {
   box-sizing: border-box;
   margin: 0;
   padding: 0;
 }
 
-html, body, #root {
+html,
+body,
+#root {
   height: 100%;
   width: 100%;
   overflow: hidden;
@@ -103,47 +160,53 @@ html, body, #root {
 
 body {
   font-family: var(--font-family);
-  background: var(--color-bg);
-  color: var(--color-text);
+  background: var(--t-bg);
+  color: var(--t-text);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   line-height: 1.5;
-  /* Subtle mesh gradient background */
-  background-image: var(--gradient-mesh);
-  background-attachment: fixed;
+  transition: background 0.35s ease, color 0.35s ease;
 }
 
 /* ── Focus Ring ── */
 :focus-visible {
-  outline: 2px solid var(--accent-start);
+  outline: 2px solid var(--t-accent);
   outline-offset: 2px;
   border-radius: var(--radius-sm);
 }
-:focus:not(:focus-visible) { outline: none; }
+
+:focus:not(:focus-visible) {
+  outline: none;
+}
 
 /* ── Reduced Motion ── */
 @media (prefers-reduced-motion: reduce) {
-  *, *::before, *::after {
+
+  *,
+  *::before,
+  *::after {
     animation-duration: 0.01ms !important;
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
   }
 }
 
-/* ── Premium Scrollbar ── */
-::-webkit-scrollbar { width: 4px; height: 4px; }
-::-webkit-scrollbar-track { background: transparent; }
-::-webkit-scrollbar-thumb {
-  background: rgba(255,255,255,0.10);
-  border-radius: var(--radius-full);
+/* ── Scrollbar — adapts to theme ── */
+::-webkit-scrollbar {
+  width: 4px;
+  height: 4px;
 }
-::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.18); }
 
-/* ── Utility: Glass Card ── */
-.glass-card {
-  background: var(--glass-bg);
-  backdrop-filter: var(--glass-blur);
-  -webkit-backdrop-filter: var(--glass-blur);
-  border: var(--glass-border);
-  border-radius: var(--radius-lg);
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--t-scroll-thumb);
+  border-radius: var(--radius-full);
+  transition: background 0.2s;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--t-scroll-hover);
 }
