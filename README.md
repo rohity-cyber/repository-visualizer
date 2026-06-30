@@ -1,152 +1,164 @@
-# Repository Visualizer
+# RepoViz — Interactive Repository Visualizer
 
-A tool for analyzing and understanding complex codebases visually. Point it at a local folder or a public GitHub repository, and it scans the files, extracts dependency relationships without executing any code, and renders the whole thing as an interactive, draggable node graph — with AI-generated plain-English summaries available on click.
+RepoViz is a powerful developer tool for analyzing and understanding complex codebases visually. Point it at a local directory or a public GitHub repository, and it will scan the source files, extract file-level dependency relationships statically, and render them as an interactive, zoomable, and draggable node graph.
 
-This addresses the core problem of standard file explorers only showing folder hierarchy, not how files actually relate to each other, and of static diagrams being hard to read and navigate for large projects.
+The project addresses the visual limitations of traditional nested file trees, showing you *exactly* how different modules and files depend on each other, alongside cyclomatic complexity, lines of code, and AI-driven code explanations.
 
-## Problem → Solution mapping
+---
 
-| Challenge from the spec | How it's addressed |
-|---|---|
-| **Hidden relationships** — file explorers don't show how files interact | `analyzer.py` statically scans source files and extracts `import`/`require`/`#include`/`use` statements (no code execution) to build dependency edges between files |
-| **Clunky visualization** | Frontend uses React Flow for a zoomable, draggable canvas, with `dagre` for automatic layout so large graphs stay organized |
-| **Slow onboarding** | Clicking a file node calls `/api/explain`, which sends the file's content to the Groq API and returns a short, plain-English summary |
-| **Missing context on bloated files** | Every file node carries computed metrics: lines of code, blank/comment lines, code lines, file size, and an estimated cyclomatic complexity |
+##  Design System & Aesthetics
 
-## Features
+RepoViz features a premium, Pinterest/Notion-inspired theme engine. Both themes are fully responsive and share a unified layout with glassmorphism blurs (`backdrop-filter`) and smooth micro-animations.
 
-Core (from the spec):
-- **Local or GitHub input** — analyze a path on disk, or paste a GitHub URL and the backend shallow-clones it (`git clone --depth=1`) to a temp directory and cleans up afterward.
-- **Static dependency extraction** — supports Python, JavaScript/TypeScript, C/C++, Java, Go, Rust, Ruby, and PHP via per-language regex/AST-based import detection.
-- **Interactive, draggable canvas** — built with `reactflow`, nodes can be moved, zoomed, and organized freely; distinct node types for files, folders, and groups.
-- **AI summaries on click** — selecting a file requests a 3-sentence explanation from Groq (`llama-3.3-70b-versatile`, free tier).
-- **Local caching for AI calls** — explanations are cached on disk keyed by an MD5 hash of file content, so a file is only re-sent to the AI if its contents actually change (controls API cost, per the spec's "Other Notes").
-- **Code metrics per file** — LoC, blank lines, comment lines, code lines, file size, and cyclomatic complexity, shown per node.
+- **Light Theme (Warm Beige & Walnut Brown):** A bright, clean, organic look with beige backgrounds (`#f4ede3`), walnut brown typography, and warm caramel highlights.
+- **Dark Theme (Warm Mocha & Espresso):** A deep, classy mocha dark mode (`#1b1613`) using soft espresso tones and cream typography (`#f6eee3`) that perfectly compliments the light theme instead of using generic cold grays or pure black.
+- **Dynamic Edge Blending:** Connection edges automatically tint and blend into the active background (darkened walnut brown in light mode, and soft gray in dark mode) to avoid distracting neon lines and maintain a modest, clean visual style.
 
-Additional features beyond the original spec:
-- **Real-time scan progress (SSE)** — `/api/analyze-progress` streams live progress events (cloning, file counting, scanning, dependency resolution) to the frontend via Server-Sent Events, so large repos don't feel like they've frozen the UI.
-- **File content preview** — view a file's raw source directly from the graph without opening the project elsewhere.
-- **Rendered README view** — fetches and renders the analyzed repo's own `README.md` (via `react-markdown`) inside the app.
-- **Graph image export** — export the current graph view as a PNG via `html-to-image`.
-- **Sensible default exclusions** — `.git`, `__pycache__`, `node_modules`, virtual envs, `dist`/`build`/`.next`, caches, etc. are skipped automatically so the graph isn't cluttered with noise.
-- **Graceful degradation without an API key** — the app is fully usable for graph visualization and metrics even if `GROQ_API_KEY` isn't set; only the AI-explanation feature is disabled, with a clear message telling the user how to enable it.
+---
 
-## Tech Stack
+##  Tech Stack
 
-**Backend**
-- Python, [FastAPI](https://fastapi.tiangolo.com/) + Uvicorn
-- `httpx` for async HTTP calls to the Groq API
-- Standard library `ast`/regex-based parsing for dependency extraction
+### Frontend
+- **React 19 & JavaScript (ES6+)**
+- **React Flow v11:** Powering the zoomable, draggable node canvas, handles, and custom floating connection paths.
+- **Dagre Layout (`@dagrejs/dagre`):** Provides automated layout orchestration to keep large codebases structured and clean.
+- **React Markdown:** Renders the repository's own `README.md` within the details pane.
+- **Lucide Icons / React Icons (Fi):** Provides clean UI iconography.
 
-**Frontend**
-- React 19
-- [React Flow](https://reactflow.dev/) for the graph canvas
-- `@dagrejs/dagre` for automatic graph layout
-- `axios` for API calls, `react-markdown` for README rendering, `react-icons` for UI icons
+### Backend
+- **Python 3.10+ & FastAPI:** A high-performance, asynchronous REST API framework.
+- **Uvicorn:** ASGI web server.
+- **Groq API & LLMs (`llama-3.3-70b-versatile`):** Powering instant, 3-sentence plain-English file explanations.
+- **SSE (Server-Sent Events):** Real-time backend-to-frontend event streaming for scan progress updates.
+- **Custom Dependency Extraction:** Regex-based static AST import parsing (zero code execution for absolute safety).
 
-## Quick Verification (for testing/review)
+---
 
-To confirm the tool works end-to-end without needing your own large project:
-
-1. Start both servers (see below).
-2. In the UI, enter `.` or any small local folder path, or a small public GitHub repo URL such as `https://github.com/octocat/Hello-World`.
-3. Confirm: the progress bar moves through stages, a graph renders with draggable nodes, clicking a file shows its metrics, and (if `GROQ_API_KEY` is set) clicking "Explain" returns an AI summary.
-4. Re-click "Explain" on the same unmodified file — it should return instantly and be marked `cached: true`, confirming the disk cache is working.
-5. Hit `http://localhost:8000/` directly — it should return `{"status": "ok", ...}`, confirming the backend is reachable independent of the frontend.
-
-## Assumptions & Notes
-
-- The project assumes Git is installed and on `PATH`, since GitHub URL analysis depends on shelling out to `git clone`.
-- Dependency extraction is regex/AST-based on raw file text — it does not execute code, and so it can occasionally produce false positives/negatives compared to a full language-aware compiler/linter (e.g. dynamic imports, conditional requires). This is an intentional tradeoff for safety and speed, per the spec's requirement to analyze "without running the code."
-- Cyclomatic complexity is an approximation (heuristic-based) rather than a full AST-derived metric for every supported language, since most languages don't have a built-in parser available in this stack the way Python's `ast` module does.
-- Cloned GitHub repos are shallow clones (`--depth=1`) and are deleted after analysis — nothing persists on disk beyond the AI explanation cache.
-- File previews are truncated at 50 KB and READMEs at 100 KB to keep responses fast on very large files.
-
-## Project Structure
+##  Project Directory Structure
 
 ```
 repository-visualizer/
+├── README.md               # Main project documentation (this file)
 ├── backend/
-│   ├── main.py            # FastAPI app: routes for analyze, explain, file-content, readme, progress (SSE)
-│   ├── analyzer.py         # RepositoryAnalyzer: directory traversal, language detection, dependency parsing
-│   ├── ai_service.py        # Groq API integration + on-disk explanation cache
-│   ├── run.py               # Dev entrypoint (uvicorn)
-│   ├── requirements.txt
-│   └── .env.example
+│   ├── run.py              # Development ASGI server entrypoint
+│   ├── main.py             # FastAPI App containing REST endpoints & SSE streaming
+│   ├── analyzer.py         # Static code parsing engine & dependency extractor
+│   ├── ai_service.py       # Groq client integration & local MD5-keyed cache on disk
+│   ├── requirements.txt    # Python package dependencies
+│   └── .env.example        # Environment variables template
 └── frontend/
+    ├── public/
+    │   ├── favicon.svg     # Custom RepoViz brand favicon (SVG)
+    │   ├── index.html      # Main HTML entrypoint (configured metadata & theme tag)
+    │   └── manifest.json
     ├── src/
-    │   ├── App.jsx
-    │   ├── api.js                  # Axios client for the backend API
+    │   ├── App.jsx         # App shell, theme state provider, responsive layout
+    │   ├── App.css         # Background ambient glows and layout framework
+    │   ├── index.css       # Core typography, reset rules, CSS theme variables (`--t-*`)
+    │   ├── api.js          # Axios API client setup (with endpoints mapped to backend)
     │   ├── components/
-    │   │   ├── GraphCanvas.jsx     # React Flow graph rendering
-    │   │   ├── FolderNode.jsx / FileNode.jsx / GroupNode.jsx
-    │   │   ├── Sidebar.jsx / SidePanel.jsx
-    │   │   ├── TopBar.jsx
-    │   │   └── ProgressBar.jsx     # SSE-driven scan progress
+    │   │   ├── TopBar.jsx         # Custom brand logo, URL input, dropdown history, theme toggle
+    │   │   ├── TopBar.css
+    │   │   ├── Sidebar.jsx        # File navigation list, complexity scale slider
+    │   │   ├── Sidebar.css
+    │   │   ├── SidePanel.jsx      # Metrics overview, raw code preview, README viewer, AI explain
+    │   │   ├── SidePanel.css
+    │   │   ├── GraphCanvas.jsx    # ReactFlow viewport, minimap, controls, dotted background
+    │   │   ├── GraphCanvas.css
+    │   │   ├── FileNode.jsx       # Custom two-row code card component
+    │   │   ├── FileNode.css
+    │   │   ├── FolderNode.jsx     # Unified brown/caramel directory container component
+    │   │   ├── FolderNode.css
+    │   │   ├── FloatingEdge.jsx   # Custom connection edge with hover tooltip label
+    │   │   ├── FloatingEdge.css
+    │   │   ├── ProgressBar.jsx    # Glassy SSE-progress scanner overlay
+    │   │   └── ProgressBar.css
     │   └── utils/
-    │       └── buildGraph.js       # Converts backend graph JSON into React Flow nodes/edges
+    │       └── buildGraph.js      # Converts backend JSON format into ReactFlow nodes/edges
     └── package.json
 ```
 
-## Getting Started
+---
+
+##  Module Overviews & Logic
+
+### 1. Backend Code Scanner (`backend/analyzer.py`)
+- Traverse the target path while applying sensible default exclusion folders (e.g. `.git`, `node_modules`, `venv`, `__pycache__`, `dist`).
+- Analyzes files across multiple major languages: **Python, JavaScript/TypeScript, Go, C/C++, Java, Rust, Ruby, PHP**.
+- Extracts dependency mappings by parsing `import`, `require`, `include`, `use`, and packaging syntaxes.
+- Calculates file metrics: **Lines of Code (LoC)**, comment lines, blank lines, file size, and estimates **Cyclomatic Complexity** based on branch heuristics.
+
+### 2. AI Service & Cache (`backend/ai_service.py`)
+- Integrates with the **Groq API** to explain code files on demand.
+- **Disk Caching:** A local JSON cache is created on the backend. When a file is analyzed, an MD5 hash of its content is calculated. If the hash matches an entry in the cache, the cached response is served instantly. This ensures zero API costs and zero lag for unmodified files.
+
+### 3. SSE Progress Streaming (`backend/main.py`)
+- For large repositories, standard HTTP requests might time out. The backend utilizes **Server-Sent Events (SSE)** under `/api/analyze-progress` to stream real-time JSON chunks (e.g. `{"percent": 45, "message": "Cloning repository..."}`) to the frontend.
+
+### 4. Graph Construction Utility (`frontend/src/utils/buildGraph.js`)
+- Feeds nodes and edges into the `dagre` layout engine.
+- Groups files inside columns based on their directory prefix and maps parent folders (`FolderNode`) dynamically, providing hierarchical layout sections.
+
+---
+
+##  API Overview
+
+| Endpoint | Method | Response | Description |
+|---|---|---|---|
+| `/` | GET | JSON | Health check returning API status |
+| `/api/analyze` | POST | JSON | Analyzes a repository and returns a structured node/edge graph |
+| `/api/analyze-progress` | GET | EventStream | Streams progress metrics via Server-Sent Events (SSE) |
+| `/api/explain` | POST | JSON | Fetches a 3-sentence Groq summary for a file path (disk-cached) |
+| `/api/file-content` | GET | PlainText | Fetches the raw file content (capped at 50KB for security) |
+| `/api/readme` | GET | PlainText | Fetches the repository's root README (capped at 100KB) |
+
+---
+
+##  Setup & Installation
 
 ### Prerequisites
 - Python 3.10+
-- Node.js 18+ and npm
-- Git (required for the GitHub-URL clone feature)
+- Node.js 18+
+- Git (command line utility must be available on your system path)
 
-### 1. Backend setup
+### 1. Backend Server Setup
+Navigate to the backend directory, install requirements, and create your environment file:
 
 ```bash
 cd backend
 python -m venv .venv
-source .venv/bin/activate   # On Windows: .venv\Scripts\activate
+source .venv/bin/activate  # On Windows: .venv\Scripts\activate
 pip install -r requirements.txt
 cp .env.example .env
 ```
 
-Edit `.env` and add a free Groq API key (get one at https://console.groq.com) if you want AI file explanations to work:
-
+Open `.env` and enter your Groq API key:
+```env
+GROQ_API_KEY=gsk_your_groq_key_here
 ```
-GROQ_API_KEY=your_groq_key_here
-```
 
-Run the API server:
-
+Launch the server using the development entrypoint:
 ```bash
 python run.py
 ```
+The API will run on `http://localhost:8000`.
 
-The API will be available at `http://localhost:8000`.
-
-### 2. Frontend setup
+### 2. Frontend Web Setup
+Navigate to the frontend directory, install dependencies, and start the development server:
 
 ```bash
-cd frontend
+cd ../frontend
 npm install
 npm start
 ```
+The web application will open automatically at `http://localhost:3000`.
 
-The app will open at `http://localhost:3000` and is pre-configured to talk to the backend at `http://localhost:8000`.
+---
 
-## Usage
+##  Verification & Usage
 
-1. Open the app in your browser.
-2. Enter a local folder path (e.g. `~/projects/my-app`) or a GitHub URL (e.g. `https://github.com/owner/repo`).
-3. Watch the progress bar as the repository is scanned.
-4. Explore the generated graph — click a file node to preview its contents, view its README, or request an AI-generated explanation.
-5. Export the graph as an image if needed.
-
-## API Overview
-
-| Endpoint | Method | Description |
-|---|---|---|
-| `/api/analyze` | POST | Analyze a local path or GitHub URL, returns the full node/edge graph |
-| `/api/analyze-progress` | GET (SSE) | Same as above, but streams progress updates as the scan runs |
-| `/api/explain` | POST | Returns an AI-generated explanation of a given file (cached by content hash) |
-| `/api/file-content` | GET | Returns raw content of a file for preview (truncated at 50 KB) |
-| `/api/readme` | GET | Returns the repo's README content, if present |
-
-## License
-
-Add your preferred license here.
+1. **Submit a Repository:** Enter a local path (e.g., `.` for this repository) or a public GitHub repository link (e.g., `https://github.com/octocat/Hello-World`) in the top search bar and click **Analyze**.
+2. **Review Progress:** Watch the Server-Sent Events progress loader execute stages.
+3. **Explore Connections:** Hover or click nodes to highlight adjacent connections.
+4. **Detail Panel:** Click any node to open the side details drawer to inspect lines of code, complexity metrics, raw code previews, the project README, or run the Groq AI explain feature.
+5. **Theme Selection:** Toggle between the Warm Beige (Light) and Warm Mocha (Dark) modes via the top bar switch.
