@@ -1,199 +1,225 @@
 /* ──────────────────────────────────────────────
-   FileNode — GitDiagram-style file card
+   FileNode — Theme-aware clean two-row card (v4)
 ────────────────────────────────────────────── */
-@keyframes cardIn {
-  0%   { opacity: 0; transform: scale(0.92) translateY(4px); }
-  70%  { opacity: 1; transform: scale(1.01); }
-  100% { transform: scale(1) translateY(0); }
+
+@keyframes fnIn {
+  from { opacity: 0; transform: translateY(5px) scale(0.97); }
+  to   { opacity: 1; transform: translateY(0) scale(1); }
 }
 
-.file-node {
+/* ── Base card ── */
+.fn {
   position: relative;
   display: flex;
   align-items: stretch;
   border-radius: 8px;
-  background: rgba(12, 12, 22, 0.88);
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
-  border: 1px solid rgba(255,255,255,0.09);
+  background: var(--t-card-bg);
+  border: 1px solid var(--t-node-border, var(--t-border));
   overflow: hidden;
   cursor: pointer;
-  animation: cardIn 0.32s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+  box-sizing: border-box;
+  animation: fnIn 0.26s cubic-bezier(0.4, 0, 0.2, 1) both;
   transition:
     border-color 0.15s ease,
-    box-shadow 0.15s ease,
-    transform 0.15s ease,
-    background 0.15s ease;
-  box-sizing: border-box;
+    box-shadow   0.15s ease,
+    transform    0.12s ease,
+    opacity      0.22s ease,
+    filter       0.22s ease,
+    background   0.35s ease;
 }
 
-/* Glass sheen at top */
-.file-node::before {
+/* Subtle top sheen */
+.fn::before {
   content: '';
   position: absolute;
   top: 0; left: 0; right: 0;
-  height: 40%;
+  height: 50%;
   background: linear-gradient(180deg, rgba(255,255,255,0.04) 0%, transparent 100%);
   pointer-events: none;
   z-index: 0;
 }
 
-.file-node:hover {
-  border-color: var(--node-color, #6366f1);
+/* ── Hover ── */
+.fn:hover {
+  border-color: var(--c, #c4893f);
   box-shadow:
-    0 0 0 1px var(--node-color, #6366f1),
-    0 2px 12px rgba(0,0,0,0.5),
-    0 0 14px color-mix(in srgb, var(--node-color, #6366f1) 20%, transparent);
+    0 0 0 1px var(--c, #c4893f),
+    0 4px 20px rgba(0,0,0,0.14),
+    0 0 18px color-mix(in srgb, var(--c, #c4893f) 18%, transparent);
   transform: translateY(-1px);
-  background: rgba(16, 16, 30, 0.92);
+  background: var(--t-card-bg-hov);
   z-index: 10;
 }
 
-/* ── Left language colour stripe ── */
-.file-node__stripe {
+/* ── Left accent bar ── */
+.fn__bar {
   width: 3px;
   flex-shrink: 0;
-  background: var(--node-color, #6366f1);
-  box-shadow: 2px 0 8px color-mix(in srgb, var(--node-color, #6366f1) 35%, transparent);
+  background: linear-gradient(
+    180deg,
+    var(--c, #c4893f) 0%,
+    color-mix(in srgb, var(--c, #c4893f) 55%, transparent) 100%
+  );
+  box-shadow: 2px 0 10px color-mix(in srgb, var(--c, #c4893f) 40%, transparent);
   position: relative;
   z-index: 1;
 }
 
-.file-node__stripe::after {
-  content: '';
-  position: absolute;
-  top: 0; bottom: 0;
-  left: 0; right: 0;
-  background: linear-gradient(180deg, rgba(255,255,255,0.25) 0%, transparent 50%);
-}
-
-/* ── Inner content row ── */
-.file-node__inner {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 8px;
-  padding: 0 10px 0 10px;
-  flex: 1;
-  min-width: 0;
-  position: relative;
-  z-index: 1;
-}
-
-/* ── Info (name + lang) ── */
-.file-node__info {
+/* ── Card body ── */
+.fn__body {
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  justify-content: space-between;
+  padding: 9px 10px 8px 10px;
   flex: 1;
   min-width: 0;
+  position: relative;
+  z-index: 1;
+  gap: 4px;
 }
 
-.file-node__name {
-  font-size: 11.5px;
+.fn__row { display: flex; align-items: center; gap: 6px; min-width: 0; }
+.fn__row--top { justify-content: space-between; }
+.fn__row--bot { justify-content: space-between; }
+
+/* ── Filename ── */
+.fn__name {
+  font-size: 12.5px;
   font-weight: 600;
-  color: #e8edf5;
+  color: var(--t-text);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  line-height: 1.3;
-  letter-spacing: 0.1px;
   font-family: 'Inter', sans-serif;
-  transition: color 0.15s;
+  line-height: 1.25;
+  flex: 1;
+  min-width: 0;
+  letter-spacing: 0.05px;
+  transition: color 0.12s;
 }
 
-.file-node:hover .file-node__name {
-  color: #fff;
-}
+.fn:hover .fn__name { color: var(--t-text); filter: brightness(1.1); }
 
-.file-node__lang {
-  font-size: 9px;
-  color: var(--node-color, #6366f1);
-  line-height: 1.1;
-  text-transform: uppercase;
-  letter-spacing: 0.8px;
-  font-weight: 600;
-  font-family: 'JetBrains Mono', monospace;
-  opacity: 0.85;
-}
-
-/* ── Stats (loc + complexity) ── */
-.file-node__stats {
-  display: flex;
-  align-items: center;
-  gap: 5px;
-  flex-shrink: 0;
-}
-
-.file-node__loc {
-  font-size: 9px;
-  color: rgba(255,255,255,0.25);
-  font-family: 'JetBrains Mono', monospace;
-  letter-spacing: 0.3px;
-}
-
-.file-node__badge {
+/* ── Connection-count badge ── */
+.fn__conn {
   font-size: 9px;
   font-weight: 700;
-  padding: 1px 6px;
-  border-radius: 999px;
-  background: rgba(0,0,0,0.45);
-  border: 1px solid color-mix(in srgb, var(--complexity-color, #22c55e) 35%, transparent);
-  color: var(--complexity-color, #22c55e);
-  line-height: 1.5;
+  min-width: 18px;
+  height: 17px;
+  padding: 0 5px;
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--c, #c4893f) 14%, var(--t-surface));
+  border: 1px solid color-mix(in srgb, var(--c, #c4893f) 38%, transparent);
+  color: var(--c, #c4893f);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   font-family: 'JetBrains Mono', monospace;
-  transition: box-shadow 0.15s;
+  flex-shrink: 0;
+  line-height: 1;
+  transition: box-shadow 0.13s;
 }
 
-.file-node:hover .file-node__badge {
-  box-shadow: 0 0 5px var(--complexity-color, #22c55e);
+.fn:hover .fn__conn {
+  box-shadow: 0 0 7px color-mix(in srgb, var(--c, #c4893f) 55%, transparent);
 }
 
-/* ── Handles — minimalist dots ── */
-.file-node__handle.react-flow__handle {
-  width: 6px !important;
-  height: 6px !important;
-  background: var(--node-color, #6366f1) !important;
-  border: 1.5px solid rgba(5,5,12,0.9) !important;
+/* ── Language tag ── */
+.fn__lang {
+  font-size: 9px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+  color: var(--c, #c4893f);
+  font-family: 'JetBrains Mono', monospace;
+  opacity: 0.75;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  flex: 1;
+  min-width: 0;
+}
+
+/* ── Metrics ── */
+.fn__metrics { display: flex; align-items: center; gap: 5px; flex-shrink: 0; }
+
+.fn__loc {
+  font-size: 9px;
+  color: var(--t-text-muted);
+  font-family: 'JetBrains Mono', monospace;
+  letter-spacing: 0.1px;
+}
+
+.fn__cx {
+  font-size: 8.5px;
+  font-weight: 700;
+  padding: 1px 5px;
+  border-radius: 999px;
+  background: var(--t-surface);
+  border: 1px solid;
+  font-family: 'JetBrains Mono', monospace;
+  line-height: 1.5;
+  transition: box-shadow 0.13s;
+}
+
+.fn:hover .fn__cx { box-shadow: 0 0 5px var(--cc, #22c55e); }
+
+/* ── Connection handles ── */
+.fn__h.react-flow__handle {
+  width: 8px !important;
+  height: 8px !important;
+  background: var(--c, #c4893f) !important;
+  border: 2px solid var(--t-card-bg) !important;
   border-radius: 50% !important;
   opacity: 0 !important;
-  transition: opacity 0.15s ease, transform 0.15s ease !important;
-  box-shadow: 0 0 6px var(--node-color, #6366f1) !important;
+  transition: opacity 0.15s, transform 0.15s !important;
+  box-shadow: 0 0 8px var(--c, #c4893f) !important;
 }
 
-.file-node:hover .file-node__handle.react-flow__handle {
+.fn:hover .fn__h.react-flow__handle,
+.fn--selected .fn__h.react-flow__handle,
+.fn--connected .fn__h.react-flow__handle {
   opacity: 1 !important;
+  transform: scale(1.15) !important;
 }
 
-.file-node__handle--left.react-flow__handle  { left: -3px !important; }
-.file-node__handle--right.react-flow__handle { right: -3px !important; }
-.file-node__handle--top.react-flow__handle   { top: -3px !important; }
-.file-node__handle--bot.react-flow__handle   { bottom: -3px !important; }
+.fn__h--l.react-flow__handle { left: -4px !important; }
+.fn__h--r.react-flow__handle { right: -4px !important; }
+.fn__h--t.react-flow__handle { top: -4px !important; }
+.fn__h--b.react-flow__handle { bottom: -4px !important; }
 
-/* ── State modifiers ── */
-.file-node--selected {
-  border-color: var(--node-color, #6366f1) !important;
+/* ── State: selected ── */
+.fn--selected {
+  border-color: var(--c, #c4893f) !important;
   box-shadow:
-    0 0 0 2px var(--node-color, #6366f1),
-    0 0 24px color-mix(in srgb, var(--node-color, #6366f1) 30%, transparent),
-    0 4px 16px rgba(0,0,0,0.5) !important;
-  background: rgba(18, 18, 34, 0.95) !important;
+    0 0 0 2px var(--c, #c4893f),
+    0 0 28px color-mix(in srgb, var(--c, #c4893f) 28%, transparent),
+    0 4px 20px rgba(0,0,0,0.16) !important;
+  background: var(--t-card-bg-hov) !important;
   z-index: 20 !important;
 }
 
-.file-node--selected .file-node__handle.react-flow__handle {
-  opacity: 1 !important;
-}
-
-.file-node--highlighted {
-  border-color: #fbbf24 !important;
+/* ── State: connected ── */
+.fn--connected {
+  border-color: color-mix(in srgb, var(--c, #c4893f) 65%, transparent) !important;
   box-shadow:
-    0 0 0 1px #fbbf24,
-    0 0 16px rgba(251,191,36,0.3) !important;
+    0 0 0 1px color-mix(in srgb, var(--c, #c4893f) 55%, transparent),
+    0 0 12px color-mix(in srgb, var(--c, #c4893f) 14%, transparent) !important;
+  z-index: 10 !important;
 }
 
-.file-node--dimmed {
-  opacity: 0.10;
-  pointer-events: none;
-  filter: grayscale(0.8);
+/* ── State: search highlighted ── */
+.fn--highlighted {
+  border-color: var(--t-accent2) !important;
+  box-shadow:
+    0 0 0 1.5px var(--t-accent2),
+    0 0 14px color-mix(in srgb, var(--t-accent2) 30%, transparent) !important;
+}
+
+/* ── State: dimmed ── */
+.fn--dimmed {
+  opacity: 0.07 !important;
+  pointer-events: none !important;
+  filter: grayscale(0.8) !important;
+  transition: opacity 0.25s ease, filter 0.25s ease !important;
 }

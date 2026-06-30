@@ -1,8 +1,8 @@
 /* ──────────────────────────────────────────────
-   FolderNode — Section header bar
+   FolderNode — Theme-aware group header (v3)
 ────────────────────────────────────────────── */
 @keyframes folderSlideIn {
-  from { opacity: 0; transform: translateY(-6px); }
+  from { opacity: 0; transform: translateY(-8px); }
   to   { opacity: 1; transform: translateY(0); }
 }
 
@@ -10,41 +10,62 @@
   display: flex;
   align-items: center;
   gap: 8px;
-  height: 36px;
+  height: 38px;
   padding: 0 14px 0 0;
-  background: rgba(5, 5, 15, 0.88);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
-  border: 1px solid var(--folder-color, #6366f1);
+
+  background: linear-gradient(
+    90deg,
+    color-mix(in srgb, var(--t-accent) 12%, var(--t-panel-bg)) 0%,
+    var(--t-panel-bg) 100%
+  );
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid color-mix(in srgb, var(--t-accent) 40%, var(--t-border));
   border-radius: 10px;
   cursor: default;
   position: relative;
   overflow: hidden;
-  animation: folderSlideIn 0.3s cubic-bezier(0.4, 0, 0.2, 1) both;
-  transition: box-shadow 0.2s ease;
   box-sizing: border-box;
+
+  animation: folderSlideIn 0.35s cubic-bezier(0.4, 0, 0.2, 1) both;
+  transition: box-shadow 0.2s ease, border-color 0.2s ease, background 0.35s ease;
 }
 
-/* Glow on hover */
-.folder-node:hover {
-  box-shadow:
-    0 0 0 1px var(--folder-color, #6366f1),
-    0 0 24px color-mix(in srgb, var(--folder-color, #6366f1) 18%, transparent),
-    0 4px 16px rgba(0,0,0,0.5);
-}
-
-/* Top gradient sheen */
+/* Top sheen */
 .folder-node::before {
   content: '';
   position: absolute;
   top: 0; left: 0; right: 0;
-  height: 50%;
+  height: 55%;
   background: linear-gradient(
     180deg,
-    color-mix(in srgb, var(--folder-color, #6366f1) 10%, transparent) 0%,
+    rgba(255,255,255,0.06) 0%,
     transparent 100%
   );
   pointer-events: none;
+}
+
+/* Bottom accent line */
+.folder-node::after {
+  content: '';
+  position: absolute;
+  bottom: 0; left: 0; right: 0;
+  height: 1px;
+  background: linear-gradient(
+    90deg,
+    var(--t-accent) 0%,
+    color-mix(in srgb, var(--t-accent) 25%, transparent) 60%,
+    transparent 100%
+  );
+  opacity: 0.45;
+}
+
+.folder-node:hover {
+  box-shadow:
+    0 0 0 1px var(--t-accent),
+    0 0 18px color-mix(in srgb, var(--t-accent) 18%, transparent),
+    0 4px 16px rgba(0,0,0,0.12);
+  border-color: var(--t-accent);
 }
 
 /* ── Left accent strip ── */
@@ -52,43 +73,47 @@
   width: 4px;
   height: 100%;
   flex-shrink: 0;
-  background: var(--folder-color, #6366f1);
-  box-shadow: 2px 0 8px color-mix(in srgb, var(--folder-color, #6366f1) 40%, transparent);
+  background: linear-gradient(
+    180deg,
+    var(--t-accent) 0%,
+    color-mix(in srgb, var(--t-accent) 55%, transparent) 100%
+  );
+  box-shadow: 2px 0 10px color-mix(in srgb, var(--t-accent) 45%, transparent);
   border-radius: 10px 0 0 10px;
 }
 
 /* ── Icon ── */
 .folder-node__icon {
   font-size: 13px;
-  color: var(--folder-color, #6366f1);
+  color: var(--t-accent);
   flex-shrink: 0;
   opacity: 0.9;
-  filter: drop-shadow(0 0 4px var(--folder-color, #6366f1));
+  filter: drop-shadow(0 0 4px var(--t-accent));
 }
 
 /* ── Folder name ── */
 .folder-node__name {
   font-size: 12.5px;
   font-weight: 700;
-  color: var(--folder-color, #6366f1);
+  color: var(--t-text);
   flex: 1;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
   letter-spacing: 0.3px;
   font-family: 'Inter', sans-serif;
-  text-shadow: 0 0 10px color-mix(in srgb, var(--folder-color, #6366f1) 35%, transparent);
+  transition: color 0.35s;
 }
 
 /* ── File count badge ── */
 .folder-node__count {
   font-size: 9px;
   font-weight: 700;
-  padding: 2px 7px;
+  padding: 2px 8px;
   border-radius: 9999px;
-  background: color-mix(in srgb, var(--folder-color, #6366f1) 12%, rgba(0,0,0,0.5));
-  border: 1px solid color-mix(in srgb, var(--folder-color, #6366f1) 30%, transparent);
-  color: var(--folder-color, #6366f1);
+  background: color-mix(in srgb, var(--t-accent) 15%, var(--t-surface));
+  border: 1px solid color-mix(in srgb, var(--t-accent) 38%, transparent);
+  color: var(--t-accent);
   flex-shrink: 0;
   font-family: 'JetBrains Mono', monospace;
 }
@@ -96,8 +121,9 @@
 /* ── Column indicator ── */
 .folder-node__cols {
   font-size: 9px;
-  color: rgba(255,255,255,0.3);
+  color: var(--t-text-subtle);
   flex-shrink: 0;
   font-family: 'JetBrains Mono', monospace;
   letter-spacing: 0.2px;
+  transition: color 0.35s;
 }

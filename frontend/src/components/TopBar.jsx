@@ -1,29 +1,26 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { FiGitBranch, FiSearch, FiDownload, FiFolder } from 'react-icons/fi';
+import { FiSearch, FiDownload, FiFolder, FiSun, FiMoon } from 'react-icons/fi';
 import './TopBar.css';
 
 const MAX_HISTORY = 5;
 const STORAGE_KEY = 'repoviz_history';
 
 function loadHistory() {
-  try {
-    return JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
-  } catch {
-    return [];
-  }
+  try { return JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]'); }
+  catch { return []; }
 }
 
 function saveHistory(path) {
-  const prev = loadHistory();
+  const prev    = loadHistory();
   const updated = [path, ...prev.filter(p => p !== path)].slice(0, MAX_HISTORY);
   localStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
   return updated;
 }
 
-export default function TopBar({ repoPath, setRepoPath, onAnalyze, loading, stats, searchQuery, setSearchQuery, onExport, canExport }) {
-  const [history, setHistory]     = useState(loadHistory);
+export default function TopBar({ repoPath, setRepoPath, onAnalyze, loading, stats, searchQuery, setSearchQuery, onExport, canExport, theme, onToggleTheme }) {
+  const [history, setHistory]           = useState(loadHistory);
   const [showDropdown, setShowDropdown] = useState(false);
-  const wrapperRef = useRef(null);
+  const wrapperRef                      = useRef(null);
 
   const isUrl = repoPath.startsWith('https://github.com') || repoPath.startsWith('git@github.com');
 
@@ -47,8 +44,8 @@ export default function TopBar({ repoPath, setRepoPath, onAnalyze, loading, stat
   };
 
   const handleKey = (e) => {
-    if (e.key === 'Enter') handleAnalyze();
-    if (e.key === 'Escape') setShowDropdown(false);
+    if (e.key === 'Enter')    handleAnalyze();
+    if (e.key === 'Escape')   setShowDropdown(false);
     if (e.key === 'ArrowDown') setShowDropdown(true);
   };
 
@@ -74,18 +71,30 @@ export default function TopBar({ repoPath, setRepoPath, onAnalyze, loading, stat
 
   return (
     <div className="topbar">
+
+      {/* ── Brand ── */}
       <div className="topbar-brand">
-        <FiGitBranch className="brand-icon" />
-        <span className="brand-name">RepoViz</span>
+        <div className="brand-logo">
+          <svg viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <circle cx="4"  cy="10" r="2.5" fill="white" opacity="0.9"/>
+            <circle cx="16" cy="4"  r="2.5" fill="white" opacity="0.9"/>
+            <circle cx="16" cy="16" r="2.5" fill="white" opacity="0.9"/>
+            <line x1="4" y1="10" x2="16" y2="4"  stroke="white" strokeWidth="1.3" opacity="0.55"/>
+            <line x1="4" y1="10" x2="16" y2="16" stroke="white" strokeWidth="1.3" opacity="0.55"/>
+            <line x1="16" y1="4" x2="16" y2="16" stroke="white" strokeWidth="1.3" opacity="0.55"/>
+          </svg>
+        </div>
+        <span className="brand-name">Repo<span>Viz</span></span>
       </div>
 
+      {/* ── URL / Path input ── */}
       <div className="topbar-input-group" ref={wrapperRef}>
         <div className="topbar-input-wrapper">
           <FiFolder className="topbar-input-icon" />
           <input
             className="topbar-input"
             type="text"
-            placeholder="Local path or GitHub URL — e.g. C:\projects\myapp or https://github.com/user/repo"
+            placeholder="GitHub URL or local path — e.g. https://github.com/user/repo"
             value={repoPath}
             onChange={e => setRepoPath(e.target.value)}
             onKeyDown={handleKey}
@@ -132,7 +141,7 @@ export default function TopBar({ repoPath, setRepoPath, onAnalyze, loading, stat
           disabled={loading || !repoPath.trim()}
         >
           {loading ? (
-            <><span className="btn-spinner" />{isUrl ? 'Cloning...' : 'Scanning...'}</>
+            <><span className="btn-spinner" />{isUrl ? 'Cloning…' : 'Scanning…'}</>
           ) : 'Analyze'}
         </button>
 
@@ -142,33 +151,58 @@ export default function TopBar({ repoPath, setRepoPath, onAnalyze, loading, stat
             onClick={onExport}
             title="Export graph as PNG"
           >
-            <FiDownload style={{ marginRight: 5, verticalAlign: 'middle' }} /> Export PNG
+            <FiDownload size={13} />
+            Export
           </button>
         )}
       </div>
 
-      {stats && (
-        <div className="topbar-search-group">
-          <div className="topbar-search-wrapper">
-            <FiSearch className="topbar-search-icon" />
-            <input
-              className="topbar-search"
-              type="text"
-              placeholder="Search files..."
-              value={searchQuery}
-              onChange={e => setSearchQuery(e.target.value)}
-            />
+      {/* ── Right-aligned actions & stats ── */}
+      <div className="topbar-right">
+        {/* ── File search ── */}
+        {stats && (
+          <div className="topbar-search-group">
+            <div className="topbar-search-wrapper">
+              <FiSearch className="topbar-search-icon" />
+              <input
+                className="topbar-search"
+                type="text"
+                placeholder="Search files…"
+                value={searchQuery}
+                onChange={e => setSearchQuery(e.target.value)}
+              />
+            </div>
           </div>
-        </div>
-      )}
+        )}
 
-      {stats && (
-        <div className="topbar-stats">
-          <span className="topbar-stat-badge">{stats.total_files} files</span>
-          <span className="topbar-stat-badge">{stats.total_dirs} dirs</span>
-          <span className="topbar-stat-badge">{stats.total_edges} links</span>
-        </div>
-      )}
+        {/* ── Theme toggle ── */}
+        <button
+          className="topbar-theme-btn"
+          onClick={onToggleTheme}
+          title={theme === 'dark' ? 'Switch to light theme' : 'Switch to dark theme'}
+          aria-label="Toggle theme"
+        >
+          {theme === 'dark'
+            ? <FiSun size={15} />
+            : <FiMoon size={15} />
+          }
+        </button>
+
+        {/* ── Repo stats ── */}
+        {stats && (
+          <div className="topbar-stats">
+            <span className="topbar-stat-badge">
+              <span className="stat-num">{stats.total_files}</span> files
+            </span>
+            <span className="topbar-stat-badge">
+              <span className="stat-num">{stats.total_dirs}</span> dirs
+            </span>
+            <span className="topbar-stat-badge">
+              <span className="stat-num">{stats.total_edges}</span> links
+            </span>
+          </div>
+        )}
+      </div>
     </div>
   );
 }

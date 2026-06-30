@@ -20,8 +20,21 @@ export default function App() {
   const [searchQuery, setSearchQuery]         = useState('');
   const [progress, setProgress]               = useState({ percent: 0, message: '' });
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const [theme, setTheme] = useState(
+    () => localStorage.getItem('repoviz_theme') || 'dark'
+  );
   const zoomToNodeRef                         = useRef(null);
   const exportRef                             = useRef(null);
+
+  // Apply theme to <html data-theme> on every change
+  useEffect(() => {
+    document.documentElement.dataset.theme = theme;
+    localStorage.setItem('repoviz_theme', theme);
+  }, [theme]);
+
+  const handleToggleTheme = useCallback(() => {
+    setTheme(prev => prev === 'dark' ? 'light' : 'dark');
+  }, []);
 
   // Detect reduced-motion preference (for JS-driven animation decisions)
   const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -135,6 +148,8 @@ export default function App() {
         setSearchQuery={setSearchQuery}
         onExport={handleExport}
         canExport={nodes.length > 0}
+        theme={theme}
+        onToggleTheme={handleToggleTheme}
       />
       <div className="app-body">
         <Sidebar
@@ -195,6 +210,7 @@ export default function App() {
               zoomToNodeRef={zoomToNodeRef}
               exportRef={exportRef}
               selectedNode={selectedNode}
+              theme={theme}
             />
           )}
         </div>
