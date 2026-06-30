@@ -1,16 +1,35 @@
 # Repository Visualizer
 
-A tool for exploring the structure of a codebase visually. Point it at a local folder or a public GitHub repository, and it builds an interactive node graph of the directory tree — complete with file/folder relationships, dependency edges, AI-generated explanations of individual files, and a live progress stream while large repos are being scanned.
+A tool for analyzing and understanding complex codebases visually. Point it at a local folder or a public GitHub repository, and it scans the files, extracts dependency relationships without executing any code, and renders the whole thing as an interactive, draggable node graph — with AI-generated plain-English summaries available on click.
+
+This addresses the core problem of standard file explorers only showing folder hierarchy, not how files actually relate to each other, and of static diagrams being hard to read and navigate for large projects.
+
+## Problem → Solution mapping
+
+| Challenge from the spec | How it's addressed |
+|---|---|
+| **Hidden relationships** — file explorers don't show how files interact | `analyzer.py` statically scans source files and extracts `import`/`require`/`#include`/`use` statements (no code execution) to build dependency edges between files |
+| **Clunky visualization** | Frontend uses React Flow for a zoomable, draggable canvas, with `dagre` for automatic layout so large graphs stay organized |
+| **Slow onboarding** | Clicking a file node calls `/api/explain`, which sends the file's content to the Groq API and returns a short, plain-English summary |
+| **Missing context on bloated files** | Every file node carries computed metrics: lines of code, blank/comment lines, code lines, file size, and an estimated cyclomatic complexity |
 
 ## Features
 
-- **Local or GitHub input** — analyze a path on disk, or paste a GitHub URL and the backend will shallow-clone it to a temp directory.
-- **Interactive graph view** — built with React Flow (`reactflow`) and auto-laid-out with `dagre`, showing folders, files, and groups as distinct node types.
-- **Dependency detection** — parses `import`/`require`/`include`/`use` statements across Python, JavaScript/TypeScript, C/C++, Java, Go, Rust, Ruby, and PHP to draw dependency edges between files.
-- **AI file explanations** — sends file contents to the Groq API (`llama-3.3-70b-versatile`, free tier) to generate a short, plain-English explanation of what a file does, with results cached on disk by content hash so repeat lookups are instant.
-- **File preview & README rendering** — view raw file contents or a repo's rendered `README.md` without leaving the graph.
-- **Real-time progress** — a Server-Sent Events (SSE) endpoint streams scan progress (cloning, traversing, parsing) to the UI for large repositories.
-- **Image export** — export the rendered graph as an image via `html-to-image`.
+Core (from the spec):
+- **Local or GitHub input** — analyze a path on disk, or paste a GitHub URL and the backend shallow-clones it (`git clone --depth=1`) to a temp directory and cleans up afterward.
+- **Static dependency extraction** — supports Python, JavaScript/TypeScript, C/C++, Java, Go, Rust, Ruby, and PHP via per-language regex/AST-based import detection.
+- **Interactive, draggable canvas** — built with `reactflow`, nodes can be moved, zoomed, and organized freely; distinct node types for files, folders, and groups.
+- **AI summaries on click** — selecting a file requests a 3-sentence explanation from Groq (`llama-3.3-70b-versatile`, free tier).
+- **Local caching for AI calls** — explanations are cached on disk keyed by an MD5 hash of file content, so a file is only re-sent to the AI if its contents actually change (controls API cost, per the spec's "Other Notes").
+- **Code metrics per file** — LoC, blank lines, comment lines, code lines, file size, and cyclomatic complexity, shown per node.
+
+Additional features beyond the original spec:
+- **Real-time scan progress (SSE)** — `/api/analyze-progress` streams live progress events (cloning, file counting, scanning, dependency resolution) to the frontend via Server-Sent Events, so large repos don't feel like they've frozen the UI.
+- **File content preview** — view a file's raw source directly from the graph without opening the project elsewhere.
+- **Rendered README view** — fetches and renders the analyzed repo's own `README.md` (via `react-markdown`) inside the app.
+- **Graph image export** — export the current graph view as a PNG via `html-to-image`.
+- **Sensible default exclusions** — `.git`, `__pycache__`, `node_modules`, virtual envs, `dist`/`build`/`.next`, caches, etc. are skipped automatically so the graph isn't cluttered with noise.
+- **Graceful degradation without an API key** — the app is fully usable for graph visualization and metrics even if `GROQ_API_KEY` isn't set; only the AI-explanation feature is disabled, with a clear message telling the user how to enable it.
 
 ## Tech Stack
 
@@ -24,6 +43,24 @@ A tool for exploring the structure of a codebase visually. Point it at a local f
 - [React Flow](https://reactflow.dev/) for the graph canvas
 - `@dagrejs/dagre` for automatic graph layout
 - `axios` for API calls, `react-markdown` for README rendering, `react-icons` for UI icons
+
+## Quick Verification (for testing/review)
+
+To confirm the tool works end-to-end without needing your own large project:
+
+1. Start both servers (see below).
+2. In the UI, enter `.` or any small local folder path, or a small public GitHub repo URL such as `https://github.com/octocat/Hello-World`.
+3. Confirm: the progress bar moves through stages, a graph renders with draggable nodes, clicking a file shows its metrics, and (if `GROQ_API_KEY` is set) clicking "Explain" returns an AI summary.
+4. Re-click "Explain" on the same unmodified file — it should return instantly and be marked `cached: true`, confirming the disk cache is working.
+5. Hit `http://localhost:8000/` directly — it should return `{"status": "ok", ...}`, confirming the backend is reachable independent of the frontend.
+
+## Assumptions & Notes
+
+- The project assumes Git is installed and on `PATH`, since GitHub URL analysis depends on shelling out to `git clone`.
+- Dependency extraction is regex/AST-based on raw file text — it does not execute code, and so it can occasionally produce false positives/negatives compared to a full language-aware compiler/linter (e.g. dynamic imports, conditional requires). This is an intentional tradeoff for safety and speed, per the spec's requirement to analyze "without running the code."
+- Cyclomatic complexity is an approximation (heuristic-based) rather than a full AST-derived metric for every supported language, since most languages don't have a built-in parser available in this stack the way Python's `ast` module does.
+- Cloned GitHub repos are shallow clones (`--depth=1`) and are deleted after analysis — nothing persists on disk beyond the AI explanation cache.
+- File previews are truncated at 50 KB and READMEs at 100 KB to keep responses fast on very large files.
 
 ## Project Structure
 
@@ -109,12 +146,6 @@ The app will open at `http://localhost:3000` and is pre-configured to talk to th
 | `/api/explain` | POST | Returns an AI-generated explanation of a given file (cached by content hash) |
 | `/api/file-content` | GET | Returns raw content of a file for preview (truncated at 50 KB) |
 | `/api/readme` | GET | Returns the repo's README content, if present |
-
-## Notes
-
-- Excluded by default during scans: `.git`, `__pycache__`, `node_modules`, `.venv`/`venv`/`env`, `dist`, `build`, `.next`, `.cache`, `coverage`, `.mypy_cache`, `.pytest_cache`.
-- Cloned GitHub repositories are shallow-cloned (`--depth=1`) into a temp directory and removed after analysis.
-- AI explanations require a Groq API key; without one, the app still works fully for graph visualization, just without the explanation feature.
 
 ## License
 
